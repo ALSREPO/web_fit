@@ -11,10 +11,14 @@ from backend.app.database import get_db
 class CSVService:
     @staticmethod
     def parse_and_store_csv(file_path: Path) -> int:
+        """Lee e ingiere las filas del archivo CSV especificado en DuckDB."""
+        if not file_path.exists():
+            raise FileNotFoundError(f"No se encontró el archivo: {file_path}")
+
         conn = get_db()
         try:
             # Reemplazar tabla de logs con los datos nuevos del CSV parseado
-            conn.execute("DELETE FROM workout_logs")
+            conn.execute("TRUNCATE TABLE workout_logs")
             
             query = f"""
                 INSERT INTO workout_logs (fecha, exercise, category, weight, weight_unit, reps, distance, distance_unit, time_spent, comment)
@@ -40,7 +44,14 @@ class CSVService:
             conn.close()
 
     @staticmethod
+    def get_latest_csv_file(upload_dir: Path) -> Path | None:
+        """Devuelve la ruta del archivo CSV más reciente en la carpeta de subidas."""
+        csv_files = sorted(upload_dir.glob("*.csv"), key=lambda f: f.stat().st_mtime, reverse=True)
+        return csv_files[0] if csv_files else None
+
+    @staticmethod
     def get_all_records(limit: int = 100):
+        """Consulta los registros de la base de datos DuckDB."""
         conn = get_db()
         try:
             df = conn.execute("""
@@ -52,6 +63,10 @@ class CSVService:
                 ORDER BY fecha DESC, id DESC
                 LIMIT ?
             """, [limit]).df()
+            
+            if 'fecha' in df.columns:
+                df['fecha'] = df['fecha'].astype(str)
+            
             # Reemplazamos np.nan y pd.NA de forma explícita antes de to_dict
             df = df.replace({np.nan: None})
             
