@@ -73,3 +73,28 @@ class CSVService:
             return df.to_dict(orient="records")
         finally:
             conn.close()
+    
+    @staticmethod
+    def delete_old_csv_files(upload_dir: Path) -> dict:
+        """Conserva únicamente el CSV más reciente en la carpeta y elimina todos los anteriores."""
+        csv_files = sorted(upload_dir.glob("*.csv"), key=lambda f: f.stat().st_mtime, reverse=True)
+        
+        if not csv_files:
+            return {
+                "kept_file": None,
+                "deleted_files": [],
+                "message": "No se encontraron archivos CSV en la carpeta de subidas."
+            }
+            
+        kept_file = csv_files[0]
+        deleted_files = []
+        
+        for file in csv_files[1:]:
+            deleted_files.append(file.name)
+            file.unlink()  # Elimina el archivo físico
+            
+        return {
+            "kept_file": kept_file.name,
+            "deleted_files": deleted_files,
+            "message": f"Limpieza completada. Se ha conservado '{kept_file.name}' y se eliminaron {len(deleted_files)} archivo(s) antiguo(s)."
+        }

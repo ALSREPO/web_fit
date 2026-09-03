@@ -10,7 +10,7 @@ from backend.app.models.fitnotes import CSVUploadResponse
 
 app = FastAPI(
     title="FitNotes Dashboard API",
-    version="0.1.1",
+    version="0.1.2",
     description="Backend en FastAPI + DuckDB para análisis de entrenamientos"
 )
 
@@ -68,6 +68,16 @@ async def import_data(filename: Optional[str] = Query(None, description="Nombre 
 @app.get("/api/v1/records")
 async def get_records(limit: int = 100):
     return CSVService.get_all_records(limit=limit)
+
+# 4. Endpoint: Mantenimiento y limpieza de CSVs antiguos
+@app.delete("/api/v1/clean-old-csvs")
+async def clean_old_csvs():
+    try:
+        result = CSVService.delete_old_csv_files(UPLOAD_DIR)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al limpiar archivos antiguos: {str(e)}")
+
 
 @app.get("/")
 async def root():
