@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="FitNotes Dashboard API",
-    version="0.1.3",
+    version="0.1.4",
     description="Backend en FastAPI + DuckDB para análisis de entrenamientos"
 )
 

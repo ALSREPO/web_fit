@@ -1,7 +1,7 @@
 # 🏋️ Dashboard de Entrenamientos (FitNotes Analytics)
 
 ## 📌 Estado del Proyecto
-- **Fase Actual:** Configuración e Infraestructura Base (Módulo 1)
+- **Fase Actual:** Módulo 1 Finalizado. Listo para iniciar el Módulo 2 (Lógica Analítica Avanzada en Backend).
 - **Metodología:** Desarrollo Modular vía Chat + SvelteKit + FastAPI + DuckDB
 
 ---
@@ -53,7 +53,7 @@ Sí, y es sumamente sencillo. No necesitas rehacer el código ni aprender Java/K
 
 ## 📋 Hoja de Ruta (Roadmap por Módulos)
 
-- [ ] **Módulo 1:** Estructura del proyecto (Monorepo), entorno de desarrollo y definición del esquema de datos + `PROJECT_CONTEXT.md`.
+- [x] **Módulo 1:** Estructura del proyecto (Monorepo), entorno de desarrollo y definición del esquema de datos + `PROJECT_CONTEXT.md`.
 - [ ] **Módulo 2:** Backend en FastAPI + DuckDB (Parseo de CSV, cálculo de 1RM, orden inverso de histórico y separación de sesiones pasadas/futuras).
 - [ ] **Módulo 3:** Mapeo anatómico (Relación entre ejercicios del CSV y áreas musculares del cuerpo humano).
 - [ ] **Módulo 4:** Frontend SvelteKit (Estructura de vistas, navegación mobile-first y llamadas a la API).

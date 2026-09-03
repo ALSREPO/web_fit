@@ -12,7 +12,7 @@ UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data" / "up
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 router = APIRouter(
-    prefix="/api/v1",
+    prefix="/api/v1/fitnotes",
     tags=["FitNotes Data & Ingestion"]
 )
 
