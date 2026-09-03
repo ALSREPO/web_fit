@@ -18,3 +18,7 @@ venv/
 # Archivos del sistema
 .DS_Store
 Thumbs.db
+
+# Ficheros datos
+*data/uploads/*.csv
+*data/*.duckdb
