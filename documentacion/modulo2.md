@@ -159,3 +159,15 @@ Métricas agregadas:
 ### `GET /api/v1/dashboard/calendar-compact?year=YYYY&month=MM`
 
 Estado diario del mes actual para la mini-vista de calendario.
+
+## Paso C: Conexión Frontend-Backend y Construcción de Widgets
+  - Desarrollar los 4 componentes visuales de la Pantalla de Inicio.
+  - Conectar llamadas a la API y dejar la pantalla de inicio totalmente funcional.
+
+Pasos a seguir:
+1. Crear un cliente API en el frontend (src/lib/services/api.js) para centralizar las llamadas a FastAPI.
+
+2. Desarrollar los 4 componentes visuales independientes en src/lib/components/dashboard/.
+
+3. Integrar los componentes en la pantalla principal (src/routes/+page.svelte) usando peticiones reactivas.
+
