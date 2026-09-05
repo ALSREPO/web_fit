@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="FitNotes Dashboard API",
-    version="0.1.4",
+    version="0.2.2",
     description="Backend en FastAPI + DuckDB para análisis de entrenamientos"
 )
 
@@ -20,9 +20,10 @@ app.add_middleware(
 #########################################################
 # Cargamos los routers de la API
 
-from backend.app.api.routers import fitnotes
-app.include_router(fitnotes.router)
+from backend.app.api.routers import fitnotes, dashboard
 
+app.include_router(fitnotes.router)
+app.include_router(dashboard.router)
 
 @app.get("/")
 async def root():

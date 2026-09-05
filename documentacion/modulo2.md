@@ -72,7 +72,7 @@ Para ir avanzando sobre seguro sin perdernos, te sugiero trabajar en el Módulo 
 ---
 ---
 
-## Instrucciones ejecución
+## Paso A: Setup e Inicialización de SvelteKit
 
 Ejecuta los siguientes comandos desde la raíz del proyecto para crear la app en la carpeta frontend
 
@@ -126,4 +126,36 @@ Ejecuta los siguientes comandos desde la raíz del proyecto para crear la app en
     # si entras en la url que te indica el terminal, deberías ver la pantalla de bienvenida de SvelteKit
     ``` 
 
-2. 
+2. Editar los ficheros para crear el estilo, ventana y navegación base de la app (Dark Mode + BottomNav). 
+
+   - Editar `src/routes/+layout.svelte` para incluir el layout global con fondo oscuro y barra de navegación inferior.
+   - Editar `src/lib/components/layout/BottomNav.svelte` para crear la barra de navegación persistente.
+   - Editar `src/lib/components/layout/Header.svelte` para crear la cabecera minimalista.
+
+## Paso B: Desarrollo de Endpoints en FastAPI + DuckDB
+Definición de los endpoints:
+### `GET /api/v1/dashboard/next-workout`
+
+Previsión o sugerencia del próximo entrenamiento.
+
+### `GET /api/v1/dashboard/last-workout`
+
+Resumen de la última sesión en DuckDB:
+
+- Fecha
+- Tipo
+- Duración
+- Volumen
+- Número de ejercicios
+
+### `GET /api/v1/dashboard/summary?period={week|month|year|all}`
+
+Métricas agregadas:
+
+- Entrenamientos
+- Volumen total
+- Horas
+
+### `GET /api/v1/dashboard/calendar-compact?year=YYYY&month=MM`
+
+Estado diario del mes actual para la mini-vista de calendario.
