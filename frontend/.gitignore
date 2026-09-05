@@ -1,3 +1,4 @@
+# Dependencias
 node_modules
 
 # Output
@@ -7,6 +8,7 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
+/dist
 
 # OS
 .DS_Store
@@ -21,3 +23,8 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Logs y cachés
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
