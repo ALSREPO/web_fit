@@ -5,11 +5,12 @@ Widget Último Entrenamiento
 <script lang="ts">
 	import WorkoutCard from './WorkoutCard.svelte';
 
-	let { data = null }: { data?: any } = $props();
+	let { data = null, loading = false }: { data?: any; loading?: boolean } = $props();
 </script>
 
 <WorkoutCard 
-	title="Último Entrenamiento" 
+	title="Entrenamiento anterior" 
 	cardData={data} 
-	badgeColor="green" 
+	dateColorClass="text-emerald-400" 
+	{loading} 
 />

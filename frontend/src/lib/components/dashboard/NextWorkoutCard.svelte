@@ -5,14 +5,16 @@ Widget Próximo Entrenamiento
 <script lang="ts">
 	import WorkoutCard from './WorkoutCard.svelte';
 
-	let { data = null }: { data?: any } = $props();
+	let { data = null, loading = false }: { data?: any; loading?: boolean } = $props();
 
-	// Evalúa dinámicamente si es hoy (rojo) o fecha futura/mañana (amarillo)
-	let badgeColor = $derived(data?.date_label?.startsWith('Hoy') ? 'red' : 'yellow');
+	let dateColorClass = $derived(
+		data?.date_label?.startsWith('Hoy') ? 'text-rose-400' : 'text-amber-400'
+	);
 </script>
 
 <WorkoutCard 
-	title="Siguiente Entrenamiento" 
+	title="Próximo entrenamiento" 
 	cardData={data} 
-	{badgeColor} 
+	{dateColorClass} 
+	{loading} 
 />

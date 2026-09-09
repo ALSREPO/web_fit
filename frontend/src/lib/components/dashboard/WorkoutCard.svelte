@@ -1,73 +1,79 @@
 <!-- frontend/src/lib/components/dashboard/WorkoutCard.svelte 
     contiene la estructura base para los widgets de Próximo Entrenamiento y Último Entrenamiento
 -->
-<!-- frontend/src/lib/components/dashboard/WorkoutCard.svelte -->
 <script lang="ts">
+	interface ExerciseItem {
+		ejercicio: string;
+		detalle: string;
+	}
+
+	interface SessionItem {
+		tipo_ejercicio: string;
+		ejercicios: ExerciseItem[];
+	}
+
 	interface WorkoutCardData {
 		has_workout: boolean;
 		fecha?: string;
 		date_label?: string;
-		sessions: Array<{
-			tipo_ejercicio: string;
-			ejercicios: Array<{
-				ejercicio: string;
-				detalle: string;
-			}>;
-		}>;
+		sessions: SessionItem[];
 	}
 
 	interface Props {
 		title?: string;
 		cardData?: WorkoutCardData | null;
-		badgeColor?: 'green' | 'red' | 'yellow';
+		dateColorClass?: string;
+		loading?: boolean;
 	}
 
-	let { title = '', cardData = null, badgeColor = 'green' }: Props = $props();
-
-	const colorClasses = {
-		green: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-		red: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-		yellow: 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-	};
+	let {
+		title = '',
+		cardData = null,
+		dateColorClass = 'text-emerald-400',
+		loading = false
+	}: Props = $props();
 </script>
 
-<div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm">
-	<div class="mb-4 flex items-center justify-between border-b border-slate-800/80 pb-3">
-		<h3 class="text-sm font-medium uppercase tracking-wider text-slate-400">{title}</h3>
-		{#if cardData?.has_workout && cardData?.date_label}
-			<span
-				class="rounded-full border px-2.5 py-1 text-xs font-semibold shadow-xs transition-colors {colorClasses[badgeColor]}"
-			>
-				{cardData.date_label}
-			</span>
-		{/if}
-	</div>
+<section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md">
+	<p class="mb-1 text-xs font-medium text-slate-400">{title}</p>
 
-	{#if !cardData || !cardData.has_workout}
-		<div class="py-6 text-center text-sm text-slate-500">
-			No hay datos de entrenamiento disponibles.
+	{#if loading}
+		<div class="mt-2 space-y-3 animate-pulse">
+			<div class="h-5 w-1/2 rounded bg-slate-700"></div>
+			<div class="h-6 w-3/4 rounded bg-slate-700"></div>
+			<div class="h-16 w-full rounded bg-slate-700"></div>
 		</div>
-	{:else}
-		<div class="space-y-4">
-			{#each cardData.sessions as session}
-				<div class="rounded-lg border border-slate-800/40 bg-slate-950/40 p-3.5">
-					<div class="mb-2 flex items-center gap-2">
-						<span class="h-2 w-2 rounded-full bg-slate-400"></span>
-						<h4 class="text-xs font-bold uppercase tracking-wide text-slate-300">
-							{session.tipo_ejercicio}
-						</h4>
-					</div>
+	{:else if cardData && cardData.has_workout}
+		<h3 class="text-lg font-bold {dateColorClass}">{cardData.date_label}</h3>
 
-					<ul class="space-y-1.5 pl-4 text-sm">
-						{#each session.ejercicios as item}
-							<li class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 sm:gap-2">
-								<span class="font-medium text-slate-200">{item.ejercicio}:</span>
-								<span class="font-mono text-xs text-slate-400">{item.detalle}</span>
-							</li>
-						{/each}
-					</ul>
+		<div class="mt-3 space-y-4">
+			{#each cardData.sessions as session}
+				<div>
+					<p class="text-base font-semibold text-slate-100">{session.tipo_ejercicio}</p>
+
+					{#if session.ejercicios && session.ejercicios.length > 0}
+						<ul class="mt-2 space-y-2.5 pl-2 text-sm text-slate-300">
+							{#each session.ejercicios as item}
+								<li class="flex items-start gap-2.5">
+									<span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500"></span>
+									<div class="flex flex-col">
+										<span class="font-medium text-slate-200">{item.ejercicio}</span>
+										<span class="font-mono text-xs text-slate-400">{item.detalle}</span>
+									</div>
+								</li>
+							{/each}
+						</ul>
+					{/if}
 				</div>
 			{/each}
 		</div>
+
+		<div class="mt-4 text-right">
+			<a href="/ejercicios" class="text-xs font-medium text-blue-400 hover:text-blue-300">
+				Ver todos →
+			</a>
+		</div>
+	{:else}
+		<p class="mt-2 text-sm text-slate-400">No hay nada programado</p>
 	{/if}
-</div>
+</section>
