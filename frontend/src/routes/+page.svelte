@@ -1,7 +1,7 @@
 <!-- /frontend/src/routes/+page.svelte -->
 <script>
   import { onMount } from 'svelte';
-  import { api } from '$lib/services/api';
+  import { dashboardApi } from '$lib/services';
 
   import NextWorkoutCard from '$lib/components/dashboard/NextWorkoutCard.svelte';
   import LastWorkoutCard from '$lib/components/dashboard/LastWorkoutCard.svelte';
@@ -22,7 +22,7 @@
   async function loadSummary(period) {
     loadingSummary = true;
     try {
-      summary = await api.getSummary(period);
+      summary = await dashboardApi.getSummary(period);
     } catch (e) {
       console.error("Error al cargar resumen:", e);
     } finally {
@@ -32,17 +32,17 @@
 
   onMount(() => {
     // Carga paralela de los widgets
-    api.getNextWorkout()
+    dashboardApi.getNextWorkout()
       .then(res => { nextWorkout = res; })
       .catch(console.error)
       .finally(() => { loadingNext = false; });
 
-    api.getLastWorkout()
+    dashboardApi.getLastWorkout()
       .then(res => { lastWorkout = res; })
       .catch(console.error)
       .finally(() => { loadingLast = false; });
 
-    api.getCompactCalendar()
+    dashboardApi.getCompactCalendar()
       .then(res => { calendarData = res; })
       .catch(console.error)
       .finally(() => { loadingCalendar = false; });
@@ -59,9 +59,9 @@
   <NextWorkoutCard data={nextWorkout} loading={loadingNext} />
 
   <!-- 2. Último Entrenamiento -->
-  <LastWorkoutCard data={lastWorkout} loading={loadingLast} />
+  <LastWorkoutCard data={lastWorkout} loading={lastWorkout === null && loadingLast} />
 
-  <!-- 3. Resumen General (Llama directamente a WorkoutSummary usando props de Svelte 5) -->
+  <!-- 3. Resumen General -->
   <WorkoutSummary 
     summaryData={summary} 
     loading={loadingSummary} 
