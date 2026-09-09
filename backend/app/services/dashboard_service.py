@@ -4,6 +4,7 @@
 
 from datetime import date, datetime, timedelta
 import calendar
+from calendar import monthrange
 from backend.app.database import get_db
 
 class DashboardService:
@@ -103,73 +104,203 @@ class DashboardService:
     def get_next_workout():
         return DashboardService._get_workout_card_data(is_past=False)
 
+
     @staticmethod
-    def get_metrics_summary(period: str = "month"):
+    def get_summary(period: str = "week"):
         conn = get_db()
         try:
             today = date.today()
-            
-            # 1. Filtro del periodo general
+            where_clause = ""
+            params = []
+
+            # 1. Definir rangos de fecha según el periodo
             if period == "week":
-                start_date = today - timedelta(days=7)
+                start_date = today - timedelta(days=today.weekday())
+                end_date = start_date + timedelta(days=6)
+                where_clause = "WHERE fecha BETWEEN ? AND ?"
+                params = [start_date, end_date]
+
             elif period == "month":
-                start_date = today - timedelta(days=30)
+                start_date = date(today.year, today.month, 1)
+                _, last_day = monthrange(today.year, today.month)
+                end_date = date(today.year, today.month, last_day)
+                where_clause = "WHERE fecha BETWEEN ? AND ?"
+                params = [start_date, end_date]
+
             elif period == "year":
-                start_date = today - timedelta(days=365)
-            else:
-                start_date = date(2000, 1, 1)
+                start_date = date(today.year, 1, 1)
+                end_date = date(today.year, 12, 31)
+                where_clause = "WHERE fecha BETWEEN ? AND ?"
+                params = [start_date, end_date]
 
-            # Usar v_resumen_diario para conteo de sesiones totales y v_workout_sessions para métricas físicas
-            total_workouts_res = conn.execute(f"""
-                SELECT COALESCE(SUM(n_series), 0)
-                FROM v_resumen_diario
-                WHERE fecha >= '{start_date}' AND fecha < '{today}'
-            """).fetchone()
+            elif period in ["all", "historico"]:
+                where_clause = ""
+                params = []
 
-            totals_res = conn.execute(f"""
+            # 2. KPIs Globales
+            query_kpis = f"""
                 SELECT 
-                    COALESCE(SUM(weight * reps), 0.0) as total_volume,
-                    COALESCE(SUM(distance), 0.0) as total_distance
-                FROM v_workout_sessions
-                WHERE fecha >= '{start_date}' AND fecha < '{today}'
-            """).fetchone()
+                    COUNT(DISTINCT fecha) as days_count,
+                    COALESCE(SUM(n_tipo_ejercicio), 0) as sessions_count,
+                    COALESCE(SUM(volumen_total), 0) as total_volume_kg,
+                    COALESCE(SUM(distance), 0) as total_distance
+                FROM v_resumen_diario
+                {where_clause}
+            """
+            kpi_row = conn.execute(query_kpis, params).fetchone()
 
-            total_workouts = total_workouts_res[0] if total_workouts_res else 0
-            total_volume = totals_res[0] if totals_res else 0.0
-            total_distance = totals_res[1] if totals_res else 0.0
+            kpis = {
+                "days_count": kpi_row[0] or 0,
+                "sessions_count": kpi_row[1] or 0,
+                "total_volume_kg": round(kpi_row[2] or 0, 2),
+                "total_distance_km": round((kpi_row[3] or 0) / 1000.0, 2) if (kpi_row[3] and kpi_row[3] > 50) else round(kpi_row[3] or 0, 2)
+            }
 
-            # 2. Datos para el gráfico semanal (Lunes a Domingo de la semana actual)
-            start_of_week = today - timedelta(days=today.weekday())
-            day_names = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
-            weekly_chart = []
+            # 3. Gráfico por Tiempo (chart_by_time) con agrupación dinámica
+            chart_by_time = []
 
-            for i in range(7):
-                current_day = start_of_week + timedelta(days=i)
-                day_stats = conn.execute("""
-                    SELECT COALESCE(SUM(weight * reps), 0.0), COUNT(*), COALESCE(SUM(distance), 0.0)
-                    FROM v_workout_sessions
-                    WHERE fecha = ?
-                """, [current_day]).fetchone()
+            if period == "week":
+                days_es = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+                query_time = f"""
+                    SELECT 
+                        fecha,
+                        COUNT(*) as sessions_count,
+                        COALESCE(SUM(volumen_total), 0) as volume_kg,
+                        COALESCE(SUM(distance), 0) as distance
+                    FROM v_workout
+                    {where_clause}
+                    GROUP BY fecha
+                """
+                time_rows = conn.execute(query_time, params).fetchall()
+                time_map = {row[0]: row for row in time_rows}
 
-                vol = day_stats[0] or 0.0
-                count = day_stats[1] or 0
-                distance = day_stats[2] or 0.0
+                for i in range(7):
+                    current_day = start_date + timedelta(days=i)
+                    if current_day in time_map:
+                        r = time_map[current_day]
+                        dist = r[3] or 0
+                        chart_by_time.append({
+                            "label": days_es[i],
+                            "volume_kg": round(r[2] or 0, 2),
+                            "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
+                            "sessions_count": r[1]
+                        })
+                    else:
+                        chart_by_time.append({
+                            "label": days_es[i],
+                            "volume_kg": 0,
+                            "distance_km": 0,
+                            "sessions_count": 0
+                        })
 
-                weekly_chart.append({
-                    "day_name": day_names[i],
-                    "fecha": current_day,
-                    "has_workout": count > 0,
-                    "volume_kg": round(vol, 2),
-                    "distance_km": round(distance / 1000.0, 2)
+            elif period == "month":
+                query_time = f"""
+                    SELECT 
+                        STRFTIME(fecha, '%Y-%m-%d') as label,
+                        COUNT(*) as sessions_count,
+                        COALESCE(SUM(volumen_total), 0) as volume_kg,
+                        COALESCE(SUM(distance), 0) as distance
+                    FROM v_workout
+                    {where_clause}
+                    GROUP BY fecha
+                    ORDER BY fecha ASC
+                """
+                time_rows = conn.execute(query_time, params).fetchall()
+                for label, count, vol, dist in time_rows:
+                    dist = dist or 0
+                    chart_by_time.append({
+                        "label": str(label),
+                        "volume_kg": round(vol or 0, 2),
+                        "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
+                        "sessions_count": count
+                    })
+
+            elif period == "year":
+                # Agrupado por Mes (01 a 12) rellenando los 12 meses
+                months_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+                query_time = f"""
+                    SELECT 
+                        MONTH(fecha) as num_mes,
+                        COUNT(*) as sessions_count,
+                        COALESCE(SUM(volumen_total), 0) as volume_kg,
+                        COALESCE(SUM(distance), 0) as distance
+                    FROM v_workout
+                    {where_clause}
+                    GROUP BY MONTH(fecha)
+                """
+                time_rows = conn.execute(query_time, params).fetchall()
+                time_map = {row[0]: row for row in time_rows}
+
+                for m in range(1, 13):
+                    if m in time_map:
+                        r = time_map[m]
+                        dist = r[3] or 0
+                        chart_by_time.append({
+                            "label": months_es[m - 1],
+                            "volume_kg": round(r[2] or 0, 2),
+                            "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
+                            "sessions_count": r[1]
+                        })
+                    else:
+                        chart_by_time.append({
+                            "label": months_es[m - 1],
+                            "volume_kg": 0,
+                            "distance_km": 0,
+                            "sessions_count": 0
+                        })
+
+            elif period in ["all", "historico"]:
+                # Agrupado por Año (%Y)
+                query_time = f"""
+                    SELECT 
+                        STRFTIME(fecha, '%Y') as label,
+                        COUNT(*) as sessions_count,
+                        COALESCE(SUM(volumen_total), 0) as volume_kg,
+                        COALESCE(SUM(distance), 0) as distance
+                    FROM v_workout
+                    {where_clause}
+                    GROUP BY STRFTIME(fecha, '%Y')
+                    ORDER BY label ASC
+                """
+                time_rows = conn.execute(query_time, params).fetchall()
+                for label, count, vol, dist in time_rows:
+                    dist = dist or 0
+                    chart_by_time.append({
+                        "label": str(label),
+                        "volume_kg": round(vol or 0, 2),
+                        "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
+                        "sessions_count": count
+                    })
+
+            # 4. Gráfico por Tipo (chart_by_type)
+            query_type = f"""
+                SELECT 
+                    COALESCE(tipo_ejercicio, 'Otros') as label,
+                    COUNT(*) as sessions_count,
+                    COALESCE(SUM(volumen_total), 0) as volume_kg,
+                    COALESCE(SUM(distance), 0) as distance
+                FROM v_workout
+                {where_clause}
+                GROUP BY COALESCE(tipo_ejercicio, 'Otros')
+                ORDER BY sessions_count DESC
+            """
+            type_rows = conn.execute(query_type, params).fetchall()
+
+            chart_by_type = []
+            for label, count, vol, dist in type_rows:
+                dist = dist or 0
+                chart_by_type.append({
+                    "label": str(label),
+                    "volume_kg": round(vol or 0, 2),
+                    "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
+                    "sessions_count": count
                 })
 
             return {
                 "period": period,
-                "total_workouts": total_workouts,
-                "total_volume_kg": round(total_volume, 2),
-                "total_hours": 0.0,
-                "total_distance_km": round(total_distance / 1000.0, 2),
-                "weekly_chart": weekly_chart
+                "kpis": kpis,
+                "chart_by_time": chart_by_time,
+                "chart_by_type": chart_by_type
             }
         finally:
             conn.close()
@@ -180,7 +311,7 @@ class DashboardService:
         try:
             rows = conn.execute("""
                 SELECT fecha, COALESCE(SUM(weight * reps), 0.0)
-                FROM v_workout_sessions
+                FROM v_workout
                 WHERE YEAR(fecha) = ? AND MONTH(fecha) = ?
                 GROUP BY fecha
             """, [year, month]).fetchall()

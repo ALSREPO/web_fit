@@ -26,7 +26,7 @@ async def get_last_workout():
 
 @router.get("/summary", response_model=MetricsSummaryResponse)
 async def get_summary(period: str = Query("month", pattern="^(week|month|year|all)$")):
-    return DashboardService.get_metrics_summary(period)
+    return DashboardService.get_summary(period)
 
 @router.get("/calendar-compact", response_model=CompactCalendarResponse)
 async def get_calendar_compact(
