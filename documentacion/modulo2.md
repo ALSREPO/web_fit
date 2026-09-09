@@ -85,7 +85,8 @@ Ejecuta los siguientes comandos desde la raíz del proyecto para crear la app en
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
     
     # Cargar NVM en la sesión actual
-    export NVM_DIR="$HOME/.nvm" [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
     # Instalar Node.js 20 LTS
     nvm install 20
@@ -171,3 +172,12 @@ Pasos a seguir:
 
 3. Integrar los componentes en la pantalla principal (src/routes/+page.svelte) usando peticiones reactivas.
 
+
+# Levantar el servicio de desarrollo del frontend
+
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    nvm use 20
+    npm run dev -- --host
+
+    cd frontend/ && NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm use 20 && npm run dev -- --host

@@ -9,154 +9,183 @@ from backend.app.database import get_db
 class DashboardService:
 
     @staticmethod
-    def get_last_workout():
-        """Obtiene el resumen de la última sesión registrada en DuckDB."""
+    def _format_spanish_date(d: date) -> str:
+        days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+        return f"{days[d.weekday()]} {d.day} {months[d.month - 1]}"
+
+    @staticmethod
+    def _get_workout_card_data(is_past: bool):
+        """
+        Función unificada para obtener la tarjeta de entrenamiento pasada o futura.
+        - is_past=True: Obtiene la fecha más reciente anterior a HOY (Último)
+        - is_past=False: Obtiene la fecha más cercana mayor o igual a HOY (Siguiente)
+        """
         conn = get_db()
         try:
-            # Buscar la fecha más reciente
-            latest_date_res = conn.execute("SELECT MAX(fecha) FROM workout_logs").fetchone()
-            if not latest_date_res or not latest_date_res[0]:
-                return None
+            today = date.today()
+            
+            # 1. Determinar la fecha objetivo según el comparador
+            if is_past:
+                query_date = "SELECT MAX(fecha) FROM v_workout WHERE fecha < ?"
+            else:
+                query_date = "SELECT MIN(fecha) FROM v_workout WHERE fecha >= ?"
 
-            latest_date = latest_date_res[0]
+            date_res = conn.execute(query_date, [today]).fetchone()
 
-            # Agregados de esa sesión concreta
-            stats = conn.execute("""
-                SELECT 
-                    category,
-                    COUNT(DISTINCT exercise) as exercises_count,
-                    COALESCE(SUM(weight * reps), 0.0) as total_volume
-                FROM workout_logs
+            if not date_res or not date_res[0]:
+                return {
+                    "has_workout": False,
+                    "fecha": None,
+                    "date_label": None,
+                    "sessions": []
+                }
+
+            target_date: date = date_res[0]
+
+            # 2. Formatear etiqueta de fecha relativa (Ayer, Hoy, Mañana o número de días)
+            diff_days = (target_date - today).days
+
+            if diff_days == 0:
+                rel_label = "Hoy"
+            elif diff_days == 1:
+                rel_label = "Mañana"
+            elif diff_days == -1:
+                rel_label = "Ayer"
+            elif diff_days > 1:
+                rel_label = f"En {diff_days} días"
+            else:
+                rel_label = f"Hace {abs(diff_days)} días"
+
+            date_label = f"{rel_label} · {DashboardService._format_spanish_date(target_date)}"
+
+            # 3. Obtener el detalle de ejercicios ordenados por tipo desde v_ejercicios_detalle
+            rows = conn.execute("""
+                SELECT tipo_ejercicio, ejercicio, detalle_ejercicio
+                FROM v_ejercicios_detalle
                 WHERE fecha = ?
-                GROUP BY category
-                ORDER BY COUNT(*) DESC
-                LIMIT 1
-            """, [latest_date]).fetchone()
+                ORDER BY min_id ASC
+            """, [target_date]).fetchall()
 
-            if not stats:
-                return None
+            # 4. Agrupar ejercicios por disciplina (tipo_ejercicio)
+            sessions_map = {}
+            for tipo, ej_name, detalle in rows:
+                if tipo not in sessions_map:
+                    sessions_map[tipo] = []
+                sessions_map[tipo].append({
+                    "ejercicio": ej_name,
+                    "detalle": detalle
+                })
+
+            # Construir la estructura final de sesiones
+            sessions = [
+                {
+                    "tipo_ejercicio": tipo,
+                    "ejercicios": ejercicios
+                }
+                for tipo, ejercicios in sessions_map.items()
+            ]
 
             return {
-                "fecha": latest_date,
-                "category": stats[0],
-                "duration_minutes": None,  # Se calculará si existe time_spent
-                "total_volume_kg": round(stats[2], 2),
-                "exercises_count": stats[1]
+                "has_workout": True,
+                "fecha": target_date,
+                "date_label": date_label,
+                "sessions": sessions
             }
         finally:
             conn.close()
 
     @staticmethod
-    def get_next_workout_suggestion():
-        """Genera una estimación simple del próximo entrenamiento basado en la última categoría."""
-        conn = get_db()
-        try:
-            latest = conn.execute("""
-                SELECT category, MAX(fecha) as fecha 
-                FROM workout_logs 
-                GROUP BY category 
-                ORDER BY fecha DESC 
-                LIMIT 1
-            """).fetchone()
+    def get_last_workout():
+        return DashboardService._get_workout_card_data(is_past=True)
 
-            if not latest:
-                return {
-                    "eta_label": "Hoy",
-                    "routine_name": "Sesión General",
-                    "exercises": []
-                }
-
-            last_category, last_date = latest[0], latest[1]
-            today = date.today()
-            
-            # Estimación simple de días
-            diff_days = (today - last_date).days if isinstance(last_date, date) else 0
-
-            if diff_days <= 0:
-                eta_label = "Mañana"
-            elif diff_days == 1:
-                eta_label = "Hoy"
-            else:
-                eta_label = f"Hace {diff_days} días sin entrenar"
-
-            # Ejercicios más habituales de esa categoría para mostrar como resumen
-            exercises_res = conn.execute("""
-                SELECT exercise 
-                FROM workout_logs 
-                WHERE category = ? 
-                GROUP BY exercise 
-                ORDER BY COUNT(*) DESC 
-                LIMIT 4
-            """, [last_category]).fetchall()
-
-            exercises = [e[0] for e in exercises_res]
-
-            return {
-                "eta_label": eta_label,
-                "routine_name": f"Rutina - {last_category}",
-                "exercises": exercises
-            }
-        finally:
-            conn.close()
+    @staticmethod
+    def get_next_workout():
+        return DashboardService._get_workout_card_data(is_past=False)
 
     @staticmethod
     def get_metrics_summary(period: str = "month"):
-        """Calcula métricas agregadas según el filtro (week, month, year, all)."""
         conn = get_db()
         try:
-            where_clause = ""
             today = date.today()
-
+            
+            # 1. Filtro del periodo general
             if period == "week":
                 start_date = today - timedelta(days=7)
-                where_clause = f"WHERE fecha >= '{start_date}'"
             elif period == "month":
                 start_date = today - timedelta(days=30)
-                where_clause = f"WHERE fecha >= '{start_date}'"
             elif period == "year":
                 start_date = today - timedelta(days=365)
-                where_clause = f"WHERE fecha >= '{start_date}'"
-            else:  # "all"
-                where_clause = ""
+            else:
+                start_date = date(2000, 1, 1)
 
-            query = f"""
+            # Usar v_resumen_diario para conteo de sesiones totales y v_workout_sessions para métricas físicas
+            total_workouts_res = conn.execute(f"""
+                SELECT COALESCE(SUM(n_series), 0)
+                FROM v_resumen_diario
+                WHERE fecha >= '{start_date}' AND fecha < '{today}'
+            """).fetchone()
+
+            totals_res = conn.execute(f"""
                 SELECT 
-                    COUNT(DISTINCT fecha) as total_workouts,
                     COALESCE(SUM(weight * reps), 0.0) as total_volume,
                     COALESCE(SUM(distance), 0.0) as total_distance
-                FROM workout_logs
-                {where_clause}
-            """
-            res = conn.execute(query).fetchone()
+                FROM v_workout_sessions
+                WHERE fecha >= '{start_date}' AND fecha < '{today}'
+            """).fetchone()
+
+            total_workouts = total_workouts_res[0] if total_workouts_res else 0
+            total_volume = totals_res[0] if totals_res else 0.0
+            total_distance = totals_res[1] if totals_res else 0.0
+
+            # 2. Datos para el gráfico semanal (Lunes a Domingo de la semana actual)
+            start_of_week = today - timedelta(days=today.weekday())
+            day_names = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+            weekly_chart = []
+
+            for i in range(7):
+                current_day = start_of_week + timedelta(days=i)
+                day_stats = conn.execute("""
+                    SELECT COALESCE(SUM(weight * reps), 0.0), COUNT(*), COALESCE(SUM(distance), 0.0)
+                    FROM v_workout_sessions
+                    WHERE fecha = ?
+                """, [current_day]).fetchone()
+
+                vol = day_stats[0] or 0.0
+                count = day_stats[1] or 0
+                distance = day_stats[2] or 0.0
+
+                weekly_chart.append({
+                    "day_name": day_names[i],
+                    "fecha": current_day,
+                    "has_workout": count > 0,
+                    "volume_kg": round(vol, 2),
+                    "distance_km": round(distance / 1000.0, 2)
+                })
 
             return {
                 "period": period,
-                "total_workouts": res[0] or 0,
-                "total_volume_kg": round(res[1] or 0.0, 2),
-                "total_hours": 0.0,  # Reservado si hay tiempo
-                "total_distance_km": round(res[2] or 0.0, 2)
+                "total_workouts": total_workouts,
+                "total_volume_kg": round(total_volume, 2),
+                "total_hours": 0.0,
+                "total_distance_km": round(total_distance / 1000.0, 2),
+                "weekly_chart": weekly_chart
             }
         finally:
             conn.close()
 
     @staticmethod
     def get_compact_calendar(year: int, month: int):
-        """Devuelve los días del mes y marca cuáles tuvieron entrenamiento."""
         conn = get_db()
         try:
-            # Obtener días entrenados en ese mes/año
             rows = conn.execute("""
-                SELECT 
-                    fecha,
-                    COALESCE(SUM(weight * reps), 0.0) as vol
-                FROM workout_logs
+                SELECT fecha, COALESCE(SUM(weight * reps), 0.0)
+                FROM v_workout_sessions
                 WHERE YEAR(fecha) = ? AND MONTH(fecha) = ?
                 GROUP BY fecha
             """, [year, month]).fetchall()
 
             workout_map = {row[0]: row[1] for row in rows}
-
-            # Generar lista de todos los días del mes
             num_days = calendar.monthrange(year, month)[1]
             days_list = []
 

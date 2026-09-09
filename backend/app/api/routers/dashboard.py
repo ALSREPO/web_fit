@@ -6,8 +6,7 @@ from fastapi import APIRouter, Query, HTTPException
 from datetime import date
 from backend.app.services.dashboard_service import DashboardService
 from backend.app.models.dashboard import (
-    NextWorkoutResponse,
-    LastWorkoutResponse,
+    WorkoutCardResponse,
     MetricsSummaryResponse,
     CompactCalendarResponse
 )
@@ -17,19 +16,16 @@ router = APIRouter(
     tags=["Dashboard"]
 )
 
-@router.get("/next-workout", response_model=NextWorkoutResponse)
+@router.get("/next-workout", response_model=WorkoutCardResponse)
 async def get_next_workout():
-    return DashboardService.get_next_workout_suggestion()
+    return DashboardService.get_next_workout()
 
-@router.get("/last-workout", response_model=LastWorkoutResponse)
+@router.get("/last-workout", response_model=WorkoutCardResponse)
 async def get_last_workout():
-    data = DashboardService.get_last_workout()
-    if not data:
-        raise HTTPException(status_code=404, detail="No hay entrenamientos registrados.")
-    return data
+    return DashboardService.get_last_workout()
 
 @router.get("/summary", response_model=MetricsSummaryResponse)
-async def get_summary(period: str = Query("month", regex="^(week|month|year|all)$")):
+async def get_summary(period: str = Query("month", pattern="^(week|month|year|all)$")):
     return DashboardService.get_metrics_summary(period)
 
 @router.get("/calendar-compact", response_model=CompactCalendarResponse)
