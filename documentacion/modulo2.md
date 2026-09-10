@@ -23,33 +23,42 @@ Crearemos 3 bloques de endpoints principales:
 
 ## 2. Arquitectura del Frontend (SvelteKit)
 
-Estructuraremos la carpeta frontend/ usando Tailwind CSS v3/v4 con un enfoque Dark Mode native-first (fondo oscuro por defecto, pensado para bajo consumo de batería y consulta en gimnasio).
+La aplicación utiliza SvelteKit con Svelte 5 (Runes), Tailwind CSS con enfoque Dark Mode native-first y componentes accesibles tanto para ordenador como para móviles táctiles.
 
 
 Estructura de Componentes y Páginas:
 
 ```
-frontend/
-├── src/
-│   ├── lib/
-│   │   ├── components/
-│   │   │   ├── layout/
-│   │   │   │   ├── BottomNav.svelte      # Navegación inferior persistente (Mobile First)
-│   │   │   │   └── Header.svelte         # Cabecera minimalista
-│   │   │   └── dashboard/
-│   │   │       ├── NextWorkoutCard.svelte
-│   │   │       ├── LastWorkoutCard.svelte
-│   │   │       ├── MetricsSummary.svelte # Selector de periodo (Semana/Mes/Año/Histórico)
-│   │   │       └── CompactCalendar.svelte
-│   │   ├── services/
-│   │   │   └── api.js                    # Cliente HTTP (fetch / axios) centralizado
-│   │   └── types/                        # Tipado JSDoc / TS (si aplica)
-│   └── routes/
-│       ├── +layout.svelte                # Wrapper global (Dark mode + BottomNav)
-│       ├── +page.svelte                  # PANTALLA DE INICIO
-│       ├── calendario/                   # (Módulo 3)
-│       ├── detalle/[fecha]/              # (Módulo 4)
-│       └── historico/[ejercicio]/        # (Módulo 5)
+frontend/src/
+├── app.css
+├── app.d.ts
+├── app.html
+├── lib/
+│   ├── assets/
+│   │   └── favicon.svg
+│   ├── components/
+│   │   ├── dashboard/
+│   │   │   ├── CompactCalendarCard.svelte  # Calendario mensual interactivo con cambio de mes/año e indicadores por disciplina
+│   │   │   ├── LastWorkoutCard.svelte     # Tarjeta de resumen de última sesión
+│   │   │   ├── NextWorkoutCard.svelte     # Tarjeta de previsión del próximo entreno
+│   │   │   ├── SummarySection.svelte      # Wrapper/Sección de resumen
+│   │   │   ├── WorkoutCard.svelte         # Tarjeta genérica de entrenamiento
+│   │   │   └── WorkoutSummary.svelte      # Gráfico de barras interactivo con métricas y soporte touch/click
+│   │   └── layout/
+│   │       └── BottomNav.svelte           # Navegación inferior persistente (Mobile-First)
+│   ├── services/
+│   │   ├── client.js                      # Cliente base Fetch API centralizado
+│   │   ├── dashboard.js                   # Módulo de llamadas API para el Dashboard
+│   │   └── index.js                       # Exportación centralizada (`dashboardApi`)
+│   └── index.js
+└── routes/
+    ├── layout.css
+    ├── +layout.svelte                     # Layout global (Fondo oscuro + BottomNav)
+    └── +page.svelte                       # PANTALLA DE INICIO (Orquestador principal)
+
+    ├── calendario/                   # (Módulo 3)
+    ├── detalle/[fecha]/              # (Módulo 4)
+    └── historico/[ejercicio]/        # (Módulo 5)
 ```
 
 
@@ -166,7 +175,7 @@ Estado diario del mes actual para la mini-vista de calendario.
   - Conectar llamadas a la API y dejar la pantalla de inicio totalmente funcional.
 
 Pasos a seguir:
-1. Crear un cliente API en el frontend (src/lib/services/api.js) para centralizar las llamadas a FastAPI.
+1. Crear un cliente API en el frontend (src/lib/services/index.js, client.js y dashboard.js) para centralizar las llamadas a FastAPI.
 
 2. Desarrollar los 4 componentes visuales independientes en src/lib/components/dashboard/.
 

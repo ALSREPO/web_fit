@@ -1,7 +1,7 @@
 # 🏋️ Dashboard de Entrenamientos (FitNotes Analytics)
 
 ## 📌 Estado del Proyecto
-- **Fase Actual:** Módulo 1 Finalizado. Listo para iniciar el Módulo 2 (Base SvelteKit + Pantalla de Inicio).
+- **Fase Actual:** Módulos 1, 2 y 3 Finalizados (v0.2.10). Listo para iniciar el Módulo 4 (Pantalla de Detalle del Día).
 - **Metodología:** Desarrollo Modular vía Chat + SvelteKit + FastAPI + DuckDB
 
 ---
@@ -88,21 +88,21 @@ Sí, y es sumamente sencillo. No necesitas rehacer el código ni aprender Java/K
 
 - [x] **Módulo 1:** Estructura del proyecto (Monorepo), entorno de desarrollo y definición del esquema de datos + `PROJECT_CONTEXT.md`.
 
-- [ ] **Módulo 2:** Base SvelteKit + Pantalla de Inicio
+- [x] **Módulo 2:** Base SvelteKit + Pantalla de Inicio
     - Backend: Endpoints para Próximo entrenamiento, Último entrenamiento, Resumen general filtrable (Semana/Mes/Año/Histórico) y mini-calendario.
     - Frontend (SvelteKit): Setup de UI (Tailwind CSS, Dark Mode, Navegación simple Mobile First) + Widgets de la Pantalla de Inicio.
 
-- [ ] **Módulo 3:** Pantalla de Calendario
+- [x] **Módulo 3:** Pantalla de Calendario
   - Backend: Endpoint que devuelva el estado de cada día del mes (Realizado, Planificado, Descanso) según los registros del CSV.
   - Frontend: Vista de calendario mensual interactiva con estados de color y redirección a la fecha pulsada.
 
 - [ ] **Módulo 4:** Pantalla de Detalle del Día
   - Backend: Consulta del desglose de la sesión (ejercicios, series, peso, volumen) + Mapeo anatómico básico (Músculos primarios en rojo, secundarios en amarillo).
-  - Frontend: Cabecera de sesión, tarjetas de ejercicios ejecutados y componente SVG dinámico del Mapa Muscular (Frontal/Trasero).
+  - Frontend: Vista `/detalle/[fecha]` con cabecera de la sesión, desglose serie por serie y componente SVG del Mapa Muscular (Frontal/Trasero).
 
 - [ ] **Módulo 5:** Pantalla de Histórico del Ejercicio
   - Backend: Histórico inverso, cálculo de 1RM estimado, peso máximo registrado y puntos para la gráfica de evolución.
-  - Frontend: Listado cronológico, métricas clave y gráfico sencillo de progresión temporal (con Chart.js/Recharts).
+  - Frontend: Vista `/historico/[ejercicio]` con métricas clave, listado cronológico y gráfica de progresión.
 
 - [ ] **Módulo 6:** Empaquetado PWA y Despliegue
   - Añadir manifest.json y Service Worker en SvelteKit para instalación directa en pantalla de inicio de Android (PWA sin navegador).
