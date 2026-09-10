@@ -44,7 +44,7 @@
 			onPeriodChange(pId);
 		}
 	}
-
+	
 	// Obtener datos activos filtrando según el tipo de métrica seleccionada
 	let activeChartData = $derived.by(() => {
 		if (!summaryData) return [];
@@ -83,7 +83,24 @@
 		volume_kg: 'kg',
 		distance_km: 'km'
 	};
+
+	// Estado para registrar la barra seleccionada activamente
+	let activeBarIndex = $state<number | null>(null);
+
+	function handleBarClick(event: MouseEvent, index: number) {
+		// Detener la propagación para que el evento global de la ventana no lo cierre inmediatamente
+		event.stopPropagation();
+		activeBarIndex = activeBarIndex === index ? null : index;
+	}
+
+	function handleWindowClick() {
+		// Ocultar cualquier tooltip activo si se hace clic fuera
+		activeBarIndex = null;
+	}
 </script>
+
+<!-- Listener global para clics fuera -->
+<svelte:window onclick={handleWindowClick} />
 
 <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md space-y-6">
 	<!-- Header con Selector de Periodo -->
@@ -194,7 +211,7 @@
 			</div>
 		</div>
 
-		<!-- Gráfico de Barras -->
+		<!-- Área del Gráfico de Barras -->
 		{#if loading}
 			<div class="h-48 w-full animate-pulse rounded-xl bg-slate-900/40"></div>
 		{:else if activeChartData.length === 0}
@@ -203,28 +220,38 @@
 			</div>
 		{:else}
 			<div class="flex h-48 items-end gap-2 rounded-xl border border-slate-700/40 bg-slate-900/40 p-4 pt-6">
-				{#each activeChartData as item}
+				{#each activeChartData as item, index}
 					{@const val = item[selectedMetric] || 0}
 					{@const heightPercent = Math.max((val / maxVal) * 100, val > 0 ? 8 : 2)}
+					{@const isSelected = activeBarIndex === index}
 					
-					<div class="group relative flex h-full flex-1 flex-col items-center justify-end">
-						<div class="absolute -top-7 hidden rounded bg-slate-900 px-2 py-0.5 text-[10px] font-mono text-slate-200 shadow-md border border-slate-700 group-hover:block z-10 whitespace-nowrap">
+					<button
+						type="button"
+						class="group relative flex h-full flex-1 flex-col items-center justify-end cursor-pointer bg-transparent border-0 p-0 text-left outline-none"
+						onclick={(e) => handleBarClick(e, index)}
+					>
+						<!-- Tooltip: Se muestra con Hover (PC) o si está Activa/Tocada (Móvil) -->
+						<div 
+							class="absolute -top-7 rounded bg-slate-900 px-2 py-0.5 text-[10px] font-mono text-slate-200 shadow-md border border-slate-700 transition-opacity z-10 whitespace-nowrap pointer-events-none {isSelected ? 'block' : 'hidden group-hover:block'}"
+						>
 							{val} {metricUnits[selectedMetric]}
 						</div>
 
+						<!-- Barra -->
 						<div
 							class="w-full max-w-[32px] rounded-t transition-all duration-300 {selectedMetric === 'sessions_count'
 								? 'bg-blue-500 group-hover:bg-blue-400'
 								: selectedMetric === 'volume_kg'
 								? 'bg-amber-500 group-hover:bg-amber-400'
-								: 'bg-emerald-500 group-hover:bg-emerald-400'}"
+								: 'bg-emerald-500 group-hover:bg-emerald-400'} {isSelected ? 'brightness-125 ring-1 ring-white/50' : ''}"
 							style="height: {heightPercent}%"
 						></div>
 
+						<!-- Etiqueta inferior -->
 						<span class="mt-2 truncate text-[10px] font-medium text-slate-400 max-w-full">
 							{item.label}
 						</span>
-					</div>
+					</button>
 				{/each}
 			</div>
 		{/if}
