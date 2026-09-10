@@ -119,13 +119,53 @@ def init_db(conn: duckdb.DuckDBPyConnection):
         )
     """)
 
-    # 4. Inserción inicial de datos (solo si la tabla está vacía)
+    # 4. Tabla de mapeo 'muscle_svg_mapping' para asociar músculos con IDs SVG
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS muscle_svg_mapping (
+            muscle_name VARCHAR NOT NULL PRIMARY KEY,
+            svg_ids VARCHAR NOT NULL
+        )
+    """)
+
+    # 5. Inserción inicial de datos (solo si la tabla está vacía)
     count = conn.execute("SELECT COUNT(*) FROM exercise_muscles").fetchone()[0]
     if count == 0:
         conn.executemany("""
             INSERT INTO exercise_muscles (ejercicio, tipo_ejercicio, musculos, tipo_musculos)
             VALUES (?, ?, ?, ?)
         """, INITIAL_EXERCISES_DATA)
+    
+    # 6. Inserción de mapeos de músculos a SVG (solo si está vacía)
+    svg_count = conn.execute("SELECT COUNT(*) FROM muscle_svg_mapping").fetchone()[0]
+    if svg_count == 0:
+        muscle_svg_data = [
+            ("abdominales", "abs"),
+            ("transverso del abdomen", "abs"),
+            ("core", "abs"),
+            ("hombros", "shoulders-front,shoulders-back"),
+            ("deltoides (hombros)", "shoulders-front,shoulders-back"),
+            ("deltoides", "shoulders-front,shoulders-back"),
+            ("deltoides anterior", "shoulders-front"),
+            ("glúteos", "glutes"),
+            ("cuádriceps", "quads"),
+            ("isquiotibiales", "hamstrings"),
+            ("gemelos", "calves-front,calves-back"),
+            ("dorsal ancho", "lats"),
+            ("pectoral", "chest"),
+            ("pectoral mayor", "chest"),
+            ("pectoral superior", "chest-upper"),
+            ("tríceps", "triceps"),
+            ("bíceps", "biceps"),
+            ("braquial", "biceps"),
+            ("trapecio", "traps-front,traps-back"),
+            ("redondo mayor", "teres"),
+            ("romboide", "rhomboids"),
+            ("erectores espinales", "erectors"),
+        ]
+        conn.executemany("""
+            INSERT INTO muscle_svg_mapping (muscle_name, svg_ids)
+            VALUES (?, ?)
+        """, muscle_svg_data)
     
     create_views(conn)
 

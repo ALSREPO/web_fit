@@ -5,6 +5,8 @@
 from fastapi import APIRouter, Query
 from datetime import date
 from backend.app.services.dashboard_service import DashboardService
+from backend.app.services.calendar_service import CalendarService
+from backend.app.services.day_detail_service import DayDetailService
 from backend.app.models.dashboard import (
     WorkoutCardResponse,
     MetricsSummaryResponse,
@@ -34,8 +36,8 @@ async def get_calendar_compact(
     year: int = Query(default_factory=lambda: date.today().year),
     month: int = Query(default_factory=lambda: date.today().month, ge=1, le=12)
 ):
-    return DashboardService.get_compact_calendar(year, month)
+    return CalendarService.get_compact_calendar(year, month)
 
 @router.get("/day-detail/{fecha}", response_model=DayDetailResponse)
 async def get_day_detail(fecha: date):
-    return DashboardService.get_day_detail(fecha)
+    return DayDetailService.get_day_detail(fecha)

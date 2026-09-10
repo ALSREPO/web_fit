@@ -17,10 +17,17 @@ Widget Calendario Compacto
 	let internalData = $state(null);
 	let internalLoading = $state(false);
 
-	// Actualizar datos internos cuando viene prop inicial o cuando el usuario cambia de mes
+	// Actualizar datos internos cuando viene prop inicial
 	$effect(() => {
 		if (data && !internalData && !internalLoading) {
 			internalData = data;
+		}
+	});
+
+	// Cargar datos iniciales si no hay prop data al montar
+	$effect(() => {
+		if (!internalData && !data && !internalLoading && selectedYear && selectedMonth) {
+			fetchMonthData(selectedYear, selectedMonth);
 		}
 	});
 

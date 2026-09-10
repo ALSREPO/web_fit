@@ -22,12 +22,21 @@
 
 	function fill(id) {
 		const role = colorById[id];
-		if (role === 'Principal') return '#ef4444';
-		if (role === 'Asistencial') return '#eab308';
+		if (role === 'Principal') return '#dc2626';
+		if (role === 'Asistencial') return '#f59e0b';
 		return '#475569';
 	}
 
+	function stroke(id) {
+		const role = colorById[id];
+		if (role === 'Principal') return '#7f1d1d';
+		if (role === 'Asistencial') return '#92400e';
+		return '#1e293b';
+	}
+
 	const idleStroke = '#0f172a';
+	const idleStrokeWidth = '0.8';
+
 </script>
 
 <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 shadow-md">
@@ -57,277 +66,353 @@
 
 	<div class="flex justify-center">
 		{#if view === 'front'}
-			<svg viewBox="0 0 220 460" class="h-80 w-auto max-w-full" aria-label="Cuerpo vista frontal">
-				<!-- Cabeza / cuello -->
-				<ellipse cx="110" cy="28" rx="22" ry="26" fill="#64748b" stroke={idleStroke} stroke-width="1.5" />
-				<rect x="102" y="52" width="16" height="16" rx="4" fill="#64748b" stroke={idleStroke} stroke-width="1.5" />
+			<svg viewBox="0 0 200 500" class="h-96 w-auto max-w-full" aria-label="Cuerpo vista frontal">
+				<defs>
+					<filter id="shadow">
+						<feDropShadow dx="0.5" dy="0.5" stdDeviation="1" flood-opacity="0.3" />
+					</filter>
+				</defs>
 
-				<!-- Trapecio frontal -->
+				<!-- Cabeza -->
+				<circle cx="100" cy="30" r="18" fill="#64748b" stroke={idleStroke} stroke-width="1" />
+
+				<!-- Cuello -->
+				<rect x="94" y="46" width="12" height="14" fill="#64748b" stroke={idleStroke} stroke-width="0.8" />
+
+				<!-- Trapecio -->
 				<path
 					id="traps-front"
-					d="M78 70 L110 62 L142 70 L132 86 L110 80 L88 86 Z"
+					d="M 75 58 L 100 52 L 125 58 L 118 75 L 100 70 L 82 75 Z"
 					fill={fill('traps-front')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('traps-front')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Hombros -->
+				<!-- Hombros/Deltoides -->
 				<ellipse
 					id="shoulders-front"
-					cx="62"
-					cy="92"
-					rx="22"
-					ry="16"
+					cx="60"
+					cy="78"
+					rx="18"
+					ry="22"
 					fill={fill('shoulders-front')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('shoulders-front')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 				<ellipse
-					cx="158"
-					cy="92"
-					rx="22"
-					ry="16"
+					cx="140"
+					cy="78"
+					rx="18"
+					ry="22"
 					fill={fill('shoulders-front')}
-					stroke={idleStroke}
-					stroke-width="1.2"
-				/>
-
-				<!-- Pectoral superior -->
-				<path
-					id="chest-upper"
-					d="M80 86 L110 80 L140 86 L136 102 L110 96 L84 102 Z"
-					fill={fill('chest-upper')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('shoulders-front')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
 				<!-- Pectoral -->
 				<path
 					id="chest"
-					d="M84 100 L110 94 L136 100 L140 132 L110 126 L80 132 Z"
+					d="M 75 80 Q 100 70 125 80 L 128 140 Q 100 135 72 140 Z"
 					fill={fill('chest')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('chest')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Bíceps -->
+				<!-- Pectoral Superior -->
+				<path
+					id="chest-upper"
+					d="M 80 75 Q 100 65 120 75 L 120 95 Q 100 90 80 95 Z"
+					fill={fill('chest-upper')}
+					stroke={stroke('chest-upper')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
+				/>
+
+				<!-- Bíceps izquierdo -->
 				<ellipse
 					id="biceps"
-					cx="48"
-					cy="138"
-					rx="14"
-					ry="28"
+					cx="46"
+					cy="110"
+					rx="12"
+					ry="35"
 					fill={fill('biceps')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('biceps')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
+
+				<!-- Bíceps derecho -->
 				<ellipse
-					cx="172"
-					cy="138"
-					rx="14"
-					ry="28"
+					cx="154"
+					cy="110"
+					rx="12"
+					ry="35"
 					fill={fill('biceps')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('biceps')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
 				<!-- Antebrazos -->
-				<rect x="36" y="164" width="16" height="46" rx="8" fill="#64748b" stroke={idleStroke} stroke-width="1.2" />
-				<rect x="168" y="164" width="16" height="46" rx="8" fill="#64748b" stroke={idleStroke} stroke-width="1.2" />
+				<rect x="38" y="142" width="10" height="40" rx="5" fill="#64748b" stroke={idleStroke} stroke-width="0.8" />
+				<rect x="152" y="142" width="10" height="40" rx="5" fill="#64748b" stroke={idleStroke} stroke-width="0.8" />
 
 				<!-- Abdominales -->
 				<path
 					id="abs"
-					d="M88 130 L110 124 L132 130 L128 210 L110 216 L92 210 Z"
+					d="M 82 138 Q 100 133 118 138 L 115 220 Q 100 225 85 220 Z"
 					fill={fill('abs')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('abs')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Oblicuos / cadera -->
-				<path d="M80 170 L92 210 L78 230 L62 210 Z" fill="#64748b" stroke={idleStroke} stroke-width="1.2" />
-				<path d="M140 170 L128 210 L142 230 L158 210 Z" fill="#64748b" stroke={idleStroke} stroke-width="1.2" />
+				<!-- Oblicuos izquierdo -->
+				<path
+					d="M 70 160 L 85 200 L 78 240 L 62 220 Z"
+					fill="#64748b"
+					stroke={idleStroke}
+					stroke-width="0.8"
+				/>
 
-				<!-- Cuádriceps -->
+				<!-- Oblicuos derecho -->
+				<path
+					d="M 130 160 L 115 200 L 122 240 L 138 220 Z"
+					fill="#64748b"
+					stroke={idleStroke}
+					stroke-width="0.8"
+				/>
+
+				<!-- Cuádriceps izquierdo -->
 				<path
 					id="quads"
-					d="M78 228 L110 220 L96 340 L72 336 Z"
+					d="M 72 238 Q 85 235 95 242 L 92 380 Q 80 382 65 378 Z"
 					fill={fill('quads')}
-					stroke={idleStroke}
-					stroke-width="1.2"
-				/>
-				<path
-					d="M110 220 L142 228 L148 336 L124 340 Z"
-					fill={fill('quads')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('quads')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Gemelos frontales -->
+				<!-- Cuádriceps derecho -->
+				<path
+					d="M 128 238 Q 115 235 105 242 L 108 380 Q 120 382 135 378 Z"
+					fill={fill('quads')}
+					stroke={stroke('quads')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
+				/>
+
+				<!-- Gemelos izquierdos -->
 				<path
 					id="calves-front"
-					d="M74 338 L94 342 L90 420 L70 416 Z"
+					d="M 70 382 Q 80 385 85 388 L 82 460 Q 70 458 65 450 Z"
 					fill={fill('calves-front')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('calves-front')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
+
+				<!-- Gemelos derechos -->
 				<path
-					d="M126 342 L146 338 L150 416 L130 420 Z"
+					d="M 130 382 Q 120 385 115 388 L 118 460 Q 130 458 135 450 Z"
 					fill={fill('calves-front')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('calves-front')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 			</svg>
 		{:else}
-			<svg viewBox="0 0 220 460" class="h-80 w-auto max-w-full" aria-label="Cuerpo vista trasera">
-				<ellipse cx="110" cy="28" rx="22" ry="26" fill="#64748b" stroke={idleStroke} stroke-width="1.5" />
-				<rect x="102" y="52" width="16" height="16" rx="4" fill="#64748b" stroke={idleStroke} stroke-width="1.5" />
+			<svg viewBox="0 0 200 500" class="h-96 w-auto max-w-full" aria-label="Cuerpo vista trasera">
+				<defs>
+					<filter id="shadow">
+						<feDropShadow dx="0.5" dy="0.5" stdDeviation="1" flood-opacity="0.3" />
+					</filter>
+				</defs>
 
-				<!-- Trapecio trasero -->
+				<!-- Cabeza -->
+				<circle cx="100" cy="30" r="18" fill="#64748b" stroke={idleStroke} stroke-width="1" />
+
+				<!-- Cuello -->
+				<rect x="94" y="46" width="12" height="14" fill="#64748b" stroke={idleStroke} stroke-width="0.8" />
+
+				<!-- Trapecio -->
 				<path
 					id="traps-back"
-					d="M70 68 L110 58 L150 68 L138 100 L110 92 L82 100 Z"
+					d="M 70 60 L 100 50 L 130 60 L 122 80 L 100 75 L 78 80 Z"
 					fill={fill('traps-back')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('traps-back')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Hombros traseros -->
+				<!-- Hombros/Deltoides traseros -->
 				<ellipse
 					id="shoulders-back"
-					cx="62"
-					cy="96"
-					rx="22"
-					ry="16"
+					cx="60"
+					cy="82"
+					rx="18"
+					ry="22"
 					fill={fill('shoulders-back')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('shoulders-back')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 				<ellipse
-					cx="158"
-					cy="96"
-					rx="22"
-					ry="16"
+					cx="140"
+					cy="82"
+					rx="18"
+					ry="22"
 					fill={fill('shoulders-back')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('shoulders-back')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
 				<!-- Romboides -->
 				<path
 					id="rhomboids"
-					d="M96 96 L110 90 L124 96 L120 128 L110 132 L100 128 Z"
+					d="M 88 82 L 100 76 L 112 82 L 110 115 L 100 120 L 90 115 Z"
 					fill={fill('rhomboids')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('rhomboids')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Redondo mayor -->
+				<!-- Redondo mayor izquierdo -->
 				<path
 					id="teres"
-					d="M72 100 L96 108 L92 140 L68 128 Z"
+					d="M 68 90 L 88 100 L 85 130 L 62 115 Z"
 					fill={fill('teres')}
-					stroke={idleStroke}
-					stroke-width="1.2"
-				/>
-				<path
-					d="M148 100 L124 108 L128 140 L152 128 Z"
-					fill={fill('teres')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('teres')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Dorsal ancho -->
+				<!-- Redondo mayor derecho -->
+				<path
+					d="M 132 90 L 112 100 L 115 130 L 138 115 Z"
+					fill={fill('teres')}
+					stroke={stroke('teres')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
+				/>
+
+				<!-- Dorsal ancho izquierdo -->
 				<path
 					id="lats"
-					d="M68 126 L98 132 L94 200 L62 178 Z"
+					d="M 60 120 L 88 130 L 85 200 L 58 160 Z"
 					fill={fill('lats')}
-					stroke={idleStroke}
-					stroke-width="1.2"
-				/>
-				<path
-					d="M152 126 L122 132 L126 200 L158 178 Z"
-					fill={fill('lats')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('lats')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Erectores -->
+				<!-- Dorsal ancho derecho -->
+				<path
+					d="M 140 120 L 112 130 L 115 200 L 142 160 Z"
+					fill={fill('lats')}
+					stroke={stroke('lats')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
+				/>
+
+				<!-- Erectores espinales -->
 				<path
 					id="erectors"
-					d="M100 130 L110 126 L120 130 L118 214 L110 218 L102 214 Z"
+					d="M 96 115 L 104 115 L 102 220 L 98 220 Z"
 					fill={fill('erectors')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('erectors')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Tríceps -->
+				<!-- Tríceps izquierdo -->
 				<ellipse
 					id="triceps"
-					cx="48"
-					cy="140"
-					rx="14"
-					ry="28"
+					cx="46"
+					cy="112"
+					rx="12"
+					ry="35"
 					fill={fill('triceps')}
-					stroke={idleStroke}
-					stroke-width="1.2"
-				/>
-				<ellipse
-					cx="172"
-					cy="140"
-					rx="14"
-					ry="28"
-					fill={fill('triceps')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('triceps')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<rect x="36" y="166" width="16" height="46" rx="8" fill="#64748b" stroke={idleStroke} stroke-width="1.2" />
-				<rect x="168" y="166" width="16" height="46" rx="8" fill="#64748b" stroke={idleStroke} stroke-width="1.2" />
+				<!-- Tríceps derecho -->
+				<ellipse
+					cx="154"
+					cy="112"
+					rx="12"
+					ry="35"
+					fill={fill('triceps')}
+					stroke={stroke('triceps')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
+				/>
+
+				<!-- Antebrazos -->
+				<rect x="38" y="144" width="10" height="40" rx="5" fill="#64748b" stroke={idleStroke} stroke-width="0.8" />
+				<rect x="152" y="144" width="10" height="40" rx="5" fill="#64748b" stroke={idleStroke} stroke-width="0.8" />
 
 				<!-- Glúteos -->
 				<path
 					id="glutes"
-					d="M74 198 L110 210 L78 258 L62 240 Z"
+					d="M 70 205 L 100 215 L 75 265 L 62 248 Z"
 					fill={fill('glutes')}
-					stroke={idleStroke}
-					stroke-width="1.2"
-				/>
-				<path
-					d="M110 210 L146 198 L158 240 L142 258 Z"
-					fill={fill('glutes')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('glutes')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Isquiotibiales -->
+				<path
+					d="M 130 205 L 100 215 L 125 265 L 138 248 Z"
+					fill={fill('glutes')}
+					stroke={stroke('glutes')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
+				/>
+
+				<!-- Isquiotibiales izquierdos -->
 				<path
 					id="hamstrings"
-					d="M70 252 L108 258 L98 348 L72 340 Z"
+					d="M 68 262 L 100 270 L 95 380 L 65 372 Z"
 					fill={fill('hamstrings')}
-					stroke={idleStroke}
-					stroke-width="1.2"
-				/>
-				<path
-					d="M112 258 L150 252 L148 340 L122 348 Z"
-					fill={fill('hamstrings')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('hamstrings')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 
-				<!-- Gemelos traseros -->
+				<!-- Isquiotibiales derechos -->
+				<path
+					d="M 132 262 L 100 270 L 105 380 L 135 372 Z"
+					fill={fill('hamstrings')}
+					stroke={stroke('hamstrings')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
+				/>
+
+				<!-- Gemelos traseros izquierdos -->
 				<path
 					id="calves-back"
-					d="M74 342 L96 348 L90 420 L70 416 Z"
+					d="M 68 378 Q 80 382 85 385 L 82 460 Q 70 458 65 450 Z"
 					fill={fill('calves-back')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('calves-back')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
+
+				<!-- Gemelos traseros derechos -->
 				<path
-					d="M124 348 L146 342 L150 416 L130 420 Z"
+					d="M 132 378 Q 120 382 115 385 L 118 460 Q 130 458 135 450 Z"
 					fill={fill('calves-back')}
-					stroke={idleStroke}
-					stroke-width="1.2"
+					stroke={stroke('calves-back')}
+					stroke-width={idleStrokeWidth}
+					filter="url(#shadow)"
 				/>
 			</svg>
 		{/if}
