@@ -5,6 +5,18 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ---
 
+## [0.3.0] - Módulo 4: Pantalla de Detalle del Día - 2026-09-10
+
+### Added
+- **Backend:**
+  - `GET /api/v1/dashboard/day-detail/{fecha}`: desglose de la sesión (ejercicios, series, volumen, distancia, duración) y activación muscular (principal / asistencial).
+- **Frontend:**
+  - Vista `/detalle/[fecha]` con cabecera, listado serie a serie y mapa muscular SVG (frontal / trasero).
+  - Vista `/calendario` reutilizando el calendario mensual; cada día abre su detalle.
+  - Enlace al histórico del ejercicio (placeholder del Módulo 5).
+
+---
+
 ## [0.2.11] - Módulo 2: Pantalla de Inicio (Dashboard) - 2026-09-10
 
 ### Added

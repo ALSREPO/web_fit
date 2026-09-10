@@ -94,7 +94,7 @@ Widget Calendario Compacto
 	function goToDayDetail(dateStr) {
 		if (!dateStr) return;
 		// Navega a la pantalla del día seleccionado
-		goto(`/calendario?date=${dateStr}`);
+		goto(`/detalle/${dateStr}`);
 	}
 
 	// Matriz de días para construir el grid del calendario

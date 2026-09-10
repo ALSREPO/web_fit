@@ -66,3 +66,51 @@ class CompactCalendarResponse(BaseModel):
     year: int
     month: int
     days: List[DayStatus]
+
+
+# 5. Detalle del Día (Módulo 4)
+class DaySetItem(BaseModel):
+    set_number: int
+    weight: Optional[float] = None
+    weight_unit: Optional[str] = None
+    reps: Optional[int] = None
+    distance: Optional[float] = None
+    distance_unit: Optional[str] = None
+    time_spent: Optional[str] = None
+    volume_kg: Optional[float] = None
+    comment: Optional[str] = None
+    detalle: str = ""
+
+
+class DayExerciseItem(BaseModel):
+    ejercicio: str
+    tipo_ejercicio: str
+    summary: str = ""
+    total_volume_kg: float = 0.0
+    sets: List[DaySetItem] = Field(default_factory=list)
+
+
+class DaySessionDetail(BaseModel):
+    tipo_ejercicio: str
+    duration_seconds: float = 0.0
+    total_volume_kg: float = 0.0
+    total_distance_km: float = 0.0
+    exercises: List[DayExerciseItem] = Field(default_factory=list)
+
+
+class MuscleActivation(BaseModel):
+    musculo: str
+    role: str = Field(..., description="Principal o Asistencial")
+    svg_ids: List[str] = Field(default_factory=list)
+
+
+class DayDetailResponse(BaseModel):
+    has_workout: bool
+    fecha: Optional[date] = None
+    date_label: Optional[str] = None
+    duration_seconds: float = 0.0
+    duration_label: Optional[str] = None
+    total_volume_kg: float = 0.0
+    total_distance_km: float = 0.0
+    sessions: List[DaySessionDetail] = Field(default_factory=list)
+    muscles: List[MuscleActivation] = Field(default_factory=list)

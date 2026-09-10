@@ -8,5 +8,6 @@ export const dashboardApi = {
   getCompactCalendar: (year, month) => {
     const query = year && month ? `?year=${year}&month=${month}` : '';
     return request(`/dashboard/calendar-compact${query}`);
-  }
+  },
+  getDayDetail: (fecha) => request(`/dashboard/day-detail/${fecha}`)
 };

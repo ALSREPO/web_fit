@@ -44,7 +44,13 @@
 			<div class="h-16 w-full rounded bg-slate-700"></div>
 		</div>
 	{:else if cardData && cardData.has_workout}
-		<h3 class="text-lg font-bold {dateColorClass}">{cardData.date_label}</h3>
+		{#if cardData.fecha}
+			<a href="/detalle/{cardData.fecha}" class="block">
+				<h3 class="text-lg font-bold {dateColorClass}">{cardData.date_label}</h3>
+			</a>
+		{:else}
+			<h3 class="text-lg font-bold {dateColorClass}">{cardData.date_label}</h3>
+		{/if}
 
 		<div class="mt-3 space-y-4">
 			{#each cardData.sessions as session}
@@ -57,7 +63,12 @@
 								<li class="flex items-start gap-2.5">
 									<span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500"></span>
 									<div class="flex flex-col">
-										<span class="font-medium text-slate-200">{item.ejercicio}</span>
+										<a
+											href="/historico/{encodeURIComponent(item.ejercicio)}"
+											class="font-medium text-slate-200 hover:text-blue-300"
+										>
+											{item.ejercicio}
+										</a>
 										<span class="font-mono text-xs text-slate-400">{item.detalle}</span>
 									</div>
 								</li>
@@ -68,11 +79,13 @@
 			{/each}
 		</div>
 
-		<div class="mt-4 text-right">
-			<a href="/ejercicios" class="text-xs font-medium text-blue-400 hover:text-blue-300">
-				Ver todos →
-			</a>
-		</div>
+		{#if cardData.fecha}
+			<div class="mt-4 text-right">
+				<a href="/detalle/{cardData.fecha}" class="text-xs font-medium text-blue-400 hover:text-blue-300">
+					Ver detalle →
+				</a>
+			</div>
+		{/if}
 	{:else}
 		<p class="mt-2 text-sm text-slate-400">No hay nada programado</p>
 	{/if}

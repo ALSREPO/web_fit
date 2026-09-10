@@ -2,13 +2,14 @@
 # Router FastAPI para endpoints del Dashboard
 # Exposición de métricas, resúmenes y sugerencias de entrenamiento en formato JSON para el frontend.
 
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query
 from datetime import date
 from backend.app.services.dashboard_service import DashboardService
 from backend.app.models.dashboard import (
     WorkoutCardResponse,
     MetricsSummaryResponse,
-    CompactCalendarResponse
+    CompactCalendarResponse,
+    DayDetailResponse
 )
 
 router = APIRouter(
@@ -34,3 +35,7 @@ async def get_calendar_compact(
     month: int = Query(default_factory=lambda: date.today().month, ge=1, le=12)
 ):
     return DashboardService.get_compact_calendar(year, month)
+
+@router.get("/day-detail/{fecha}", response_model=DayDetailResponse)
+async def get_day_detail(fecha: date):
+    return DashboardService.get_day_detail(fecha)
