@@ -5,6 +5,7 @@
 from datetime import date, datetime, timedelta
 import calendar
 from calendar import monthrange
+from collections import defaultdict
 from backend.app.database import get_db
 
 class DashboardService:
@@ -310,23 +311,33 @@ class DashboardService:
         conn = get_db()
         try:
             rows = conn.execute("""
-                SELECT fecha, COALESCE(SUM(weight * reps), 0.0)
+                SELECT DISTINCT
+                    fecha, 
+                    LOWER(tipo_ejercicio) as tipo 
                 FROM v_workout
                 WHERE YEAR(fecha) = ? AND MONTH(fecha) = ?
-                GROUP BY fecha
+                ORDER BY fecha, LOWER(tipo_ejercicio)
             """, [year, month]).fetchall()
 
-            workout_map = {row[0]: row[1] for row in rows}
+            # Mapeamos por fecha: { date(2026, 9, 10): {"types": ["fuerza", "carrera"]} }
+            calendar_map = defaultdict(lambda: {"types": []})
+            
+            for row in rows:
+                fecha_val, tipo_val = row[0], row[1]
+                if tipo_val and tipo_val not in calendar_map[fecha_val]["types"]:
+                    calendar_map[fecha_val]["types"].append(tipo_val)
+
             num_days = calendar.monthrange(year, month)[1]
             days_list = []
 
             for day in range(1, num_days + 1):
                 current_date = date(year, month, day)
-                has_workout = current_date in workout_map
+                day_data = calendar_map.get(current_date, {"types": []})
+                
                 days_list.append({
-                    "fecha": current_date,
-                    "has_workout": has_workout,
-                    "total_volume_kg": round(workout_map.get(current_date, 0.0), 2)
+                    "date": current_date.isoformat(),  # 'YYYY-MM-DD'
+                    "has_workout": len(day_data["types"]) > 0,
+                    "types": day_data["types"]
                 })
 
             return {

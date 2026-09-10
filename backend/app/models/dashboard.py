@@ -58,10 +58,9 @@ class MetricsSummaryResponse(BaseModel):
 
 # 4. Calendario Compacto
 class DayStatus(BaseModel):
-    fecha: date
+    date: str  # Formato 'YYYY-MM-DD' para coincidir directamente con el frontend
     has_workout: bool
-    total_volume_kg: float = 0.0
-
+    types: List[str] = []
 
 class CompactCalendarResponse(BaseModel):
     year: int
