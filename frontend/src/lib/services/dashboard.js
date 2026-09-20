@@ -9,5 +9,7 @@ export const dashboardApi = {
     const query = year && month ? `?year=${year}&month=${month}` : '';
     return request(`/dashboard/calendar-compact${query}`);
   },
-  getDayDetail: (fecha) => request(`/dashboard/day-detail/${fecha}`)
+  getDayDetail: (fecha) => request(`/dashboard/day-detail/${fecha}`),
+  getExerciseMax: (ejercicio) => request(`/dashboard/exercise-max/${encodeURIComponent(ejercicio)}`),
+  getExerciseHistory: (ejercicio) => request(`/dashboard/exercise-history/${encodeURIComponent(ejercicio)}`)
 };
