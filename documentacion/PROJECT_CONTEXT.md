@@ -1,7 +1,7 @@
 # 🏋️ Dashboard de Entrenamientos (FitNotes Analytics)
 
 ## 📌 Estado del Proyecto
-- **Fase Actual:** Módulos 1, 2 y 3 Finalizados (v0.2.10). Listo para iniciar el Módulo 4 (Pantalla de Detalle del Día).
+- **Fase Actual:** Comenzar módulo 5 (Pantalla de Histórico del Ejercicio). Módulos 1, 2, 3 y 4 finalizados.
 - **Metodología:** Desarrollo Modular vía Chat + SvelteKit + FastAPI + DuckDB
 
 ---
@@ -96,7 +96,7 @@ Sí, y es sumamente sencillo. No necesitas rehacer el código ni aprender Java/K
   - Backend: Endpoint que devuelva el estado de cada día del mes (Realizado, Planificado, Descanso) según los registros del CSV.
   - Frontend: Vista de calendario mensual interactiva con estados de color y redirección a la fecha pulsada.
 
-- [ ] **Módulo 4:** Pantalla de Detalle del Día
+- [x] **Módulo 4:** Pantalla de Detalle del Día
   - Backend: Consulta del desglose de la sesión (ejercicios, series, peso, volumen) + Mapeo anatómico básico (Músculos primarios en rojo, secundarios en amarillo).
   - Frontend: Vista `/detalle/[fecha]` con cabecera de la sesión, desglose serie por serie y componente SVG del Mapa Muscular (Frontal/Trasero).
 
@@ -106,3 +106,9 @@ Sí, y es sumamente sencillo. No necesitas rehacer el código ni aprender Java/K
 
 - [ ] **Módulo 6:** Empaquetado PWA y Despliegue
   - Añadir manifest.json y Service Worker en SvelteKit para instalación directa en pantalla de inicio de Android (PWA sin navegador).
+
+---
+
+## 📋 Cosas que dejo pendientes de arreglar más adelante
+- [] **Módulo 2:** en frontend/src/lib/services/client.js la IP está a fuego. Hay que cambiarla a un fichero .env
+- [] **Módulo 4:** Pantalla de Detalle del Día: el mapa muscular es muy feo. Hay que hacerlo más estético
