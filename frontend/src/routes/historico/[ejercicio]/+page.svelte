@@ -4,11 +4,17 @@
 	import { dashboardApi } from '$lib/services';
 
     import ExerciseStatsCards from '$lib/components/historico/ExerciseStatsCards.svelte';
+    import ExerciseChart from '$lib/components/historico/ExerciseChart.svelte';
+
+    const PAGE_SIZE = 10;
 
     let loading = $state(true);
+    let loadingMore = $state(false);
     let error = $state(null);
     let maxStats = $state(null);
     let history = $state([]);
+    let offset = $state(0);
+    let hasMore = $state(true);
 
     let ejercicio = $derived(decodeURIComponent(page.params.ejercicio || ''));
 
@@ -18,14 +24,18 @@
 
         loading = true;
         error = null;
+        offset = 0;
+        hasMore = true;
 
         Promise.all([
             dashboardApi.getExerciseMax(currentExercise),
-            dashboardApi.getExerciseHistory(currentExercise).catch(() => []) // Fallback por si la lista de historial falla
+            dashboardApi.getExerciseHistory(currentExercise, PAGE_SIZE, 0).catch(() => [])
         ])
             .then(([statsRes, historyRes]) => {
                 maxStats = statsRes;
-                history = Array.isArray(historyRes) ? historyRes : [];
+                const items = Array.isArray(historyRes) ? historyRes : [];
+                history = items;
+                if (items.length < PAGE_SIZE) hasMore = false;
             })
             .catch((e) => {
                 error = e.message || 'No se pudieron obtener los datos del ejercicio';
@@ -35,15 +45,41 @@
             });
     });
 
-    function formatDate(dateStr) {
+    function loadMore() {
+        if (loadingMore || !hasMore) return;
+        loadingMore = true;
+        const nextOffset = offset + PAGE_SIZE;
+
+        dashboardApi.getExerciseHistory(ejercicio, PAGE_SIZE, nextOffset)
+            .then((newItems) => {
+                if (Array.isArray(newItems) && newItems.length > 0) {
+                    history = [...history, ...newItems];
+                    offset = nextOffset;
+                    if (newItems.length < PAGE_SIZE) hasMore = false;
+                } else {
+                    hasMore = false;
+                }
+            })
+            .finally(() => {
+                loadingMore = false;
+            });
+    }
+
+    // Formato con año: "vie, 4 dic 2024"
+    function formatDateWithYear(dateStr) {
         if (!dateStr) return '';
         const d = new Date(dateStr);
-        return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+        return d.toLocaleDateString('es-ES', { 
+            weekday: 'short', 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric' 
+        });
     }
 </script>
 
 <div class="space-y-4">
-    <!-- Navegación superior -->
+    <!-- Volver -->
     <a href="/calendario" class="inline-flex items-center text-xs font-medium text-blue-400 hover:text-blue-300">
         ← Volver
     </a>
@@ -57,16 +93,19 @@
     {#if loading}
         <div class="space-y-3 animate-pulse">
             <div class="h-28 w-full rounded-2xl bg-slate-800"></div>
-            <div class="h-40 w-full rounded-2xl bg-slate-800"></div>
+            <div class="h-44 w-full rounded-2xl bg-slate-800"></div>
             <div class="h-64 w-full rounded-2xl bg-slate-800"></div>
         </div>
     {:else if error}
         <p class="rounded-xl border border-rose-900/60 bg-rose-950/40 p-4 text-sm text-rose-300">{error}</p>
     {:else}
-        <!-- KPIs y Tarjetas de Récord -->
+        <!-- KPIs y Récords -->
         <ExerciseStatsCards stats={maxStats} />
 
-        <!-- Historial Cronológico Inverso -->
+        <!-- Gráfico Multi-Métrica y Multi-Temporal -->
+        <ExerciseChart {ejercicio} />
+
+        <!-- Lista de Sesiones Anteriores (Paginada) -->
         <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 shadow-md">
             <h3 class="mb-3 text-base font-semibold text-white">Sesiones Anteriores</h3>
 
@@ -77,11 +116,11 @@
                     {#each history as session}
                         <div class="rounded-xl border border-slate-700/70 bg-slate-900/60 p-3">
                             <div class="mb-2 flex items-center justify-between border-b border-slate-800 pb-2">
-                                <a href="/detalle/{session.fecha}" class="text-xs font-bold text-blue-400 hover:underline">
-                                    {formatDate(session.fecha)}
+                                <a href="/detalle/{session.fecha}" class="text-xs font-bold text-blue-400 hover:underline capitalize">
+                                    {formatDateWithYear(session.fecha)}
                                 </a>
                                 {#if session.total_volume_kg}
-                                    <span class="text-xs text-slate-400">
+                                    <span class="text-xs text-slate-400 font-mono">
                                         Volumen: {Math.round(session.total_volume_kg).toLocaleString('es-ES')} kg
                                     </span>
                                 {/if}
@@ -103,6 +142,18 @@
                         </div>
                     {/each}
                 </div>
+
+                <!-- Botón Cargar Más -->
+                {#if hasMore}
+                    <button
+                        type="button"
+                        onclick={loadMore}
+                        disabled={loadingMore}
+                        class="mt-4 w-full rounded-xl border border-slate-700 bg-slate-900/80 py-2.5 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-50"
+                    >
+                        {loadingMore ? 'Cargando...' : 'Cargar más sesiones'}
+                    </button>
+                {/if}
             {/if}
         </section>
     {/if}
