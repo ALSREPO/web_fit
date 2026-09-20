@@ -210,7 +210,7 @@ class DayDetailService:
                 SELECT DISTINCT E.musculos, E.tipo_musculos
                 FROM v_workout W
                 INNER JOIN exercise_muscles E ON W.ejercicio = E.ejercicio
-                WHERE W.fecha = ?
+                WHERE W.ejercicio not in ('Correr', 'Natación', 'Ciclismo') and W.fecha = ?
             """, [target_date]).fetchall()
 
             muscles_map = {}
