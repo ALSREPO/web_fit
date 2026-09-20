@@ -105,9 +105,9 @@
         <!-- Gráfico Multi-Métrica y Multi-Temporal -->
         <ExerciseChart {ejercicio} />
 
-        <!-- Lista de Sesiones Anteriores (Paginada) -->
+        <!-- Lista de Histórico de sesiones (Paginada) -->
         <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 shadow-md">
-            <h3 class="mb-3 text-base font-semibold text-white">Sesiones Anteriores</h3>
+            <h3 class="mb-3 text-base font-semibold text-white">Histórico de sesiones</h3>
 
             {#if history.length === 0}
                 <p class="text-sm text-slate-400">No hay historial registrado para este ejercicio.</p>

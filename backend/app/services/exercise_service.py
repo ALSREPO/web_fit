@@ -1,13 +1,16 @@
 # backend/app/services/exercise_service.py
 
-from typing import List, Optional
-from datetime import date
+from typing import List, Optional, Dict, Any
+from datetime import date, timedelta
 from backend.app.database import get_db
 from backend.app.models.dashboard import ExerciseMaxWeightResponse, ExerciseSessionHistory, ExerciseSetDetail, ExerciseChartPoint
 
 
 class ExerciseService:
     
+    DIAS_ESP = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
+    MESES_ESP = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+
     @staticmethod
     def get_exercise_max_weight(ejercicio_nombre: str) -> ExerciseMaxWeightResponse:
         """
@@ -137,35 +140,87 @@ class ExerciseService:
             conn.close()
 
     @staticmethod
-    def get_exercise_chart_data(ejercicio_nombre: str, timeframe: str) -> List[dict]:
-        """
-        Calcula agregaciones por periodo (semana/30días, 12meses, histórico).
-        timeframe opciones: '7d', '30d', '12m', 'all'
-        """
+    def get_exercise_chart_data(ejercicio_nombre: str, timeframe: str) -> List[Dict[str, Any]]:
         conn = get_db()
         try:
-            # Definir filtro de fecha y agrupación según el timeframe
+            today = date.today()
+            series_dict = {}
+            timeframe_list = []
+
+            # 1. Generar serie temporal completa con etiquetas en español
+            if timeframe == '7d': # Semana
+                start_date = today - timedelta(days=6)
+                curr = start_date
+                while curr <= today:
+                    key = curr.strftime('%Y-%m-%d')
+                    label_str = ExerciseService.DIAS_ESP[curr.weekday()]
+                    timeframe_list.append((key, label_str, curr))
+                    curr += timedelta(days=1)
+
+            elif timeframe == '30d': # Mes (30 días)
+                start_date = today - timedelta(days=29)
+                curr = start_date
+                while curr <= today:
+                    key = curr.strftime('%Y-%m-%d')
+                    label_str = curr.strftime('%d') # "01", "02"...
+                    timeframe_list.append((key, label_str, curr))
+                    curr += timedelta(days=1)
+
+            elif timeframe == '12m': # Año (Últimos 12 meses)
+                for i in range(11, -1, -1):
+                    y = today.year
+                    m = today.month - i
+                    while m <= 0:
+                        m += 12
+                        y -= 1
+                    dt = date(y, m, 1)
+                    key = dt.strftime('%Y-%m')
+                    label_str = ExerciseService.MESES_ESP[dt.month - 1]
+                    timeframe_list.append((key, label_str, dt))
+
+            else: # 'all' - Histórico por años
+                min_year_row = conn.execute(
+                    "SELECT MIN(YEAR(fecha)) FROM v_workout WHERE LOWER(ejercicio) = LOWER(?) AND weight IS NOT NULL",
+                    [ejercicio_nombre]
+                ).fetchone()
+                start_year = min_year_row[0] if min_year_row and min_year_row[0] else today.year
+                
+                for y in range(start_year, today.year + 1):
+                    dt = date(y, 1, 1)
+                    key = str(y)
+                    label_str = str(y)
+                    timeframe_list.append((key, label_str, dt))
+
+            # Inicializar estrucutra con valor 0
+            for key, label_str, dt_obj in timeframe_list:
+                series_dict[key] = {
+                    "period": key,
+                    "label": label_str,
+                    "fecha_ref": dt_obj.isoformat(),
+                    "total_volume": 0.0,
+                    "max_estimated_1rm": 0.0,
+                    "max_weight": 0.0,
+                    "total_reps": 0,
+                    "total_sessions": 0
+                }
+
+            # 2. Consultar registros de DuckDB
             if timeframe == '7d':
-                date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 7 DAY"
                 group_by = "STRFTIME('%Y-%m-%d', fecha)"
-                label_fmt = "STRFTIME('%d %b', fecha)"
+                date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 6 DAY"
             elif timeframe == '30d':
-                date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 30 DAY"
                 group_by = "STRFTIME('%Y-%m-%d', fecha)"
-                label_fmt = "STRFTIME('%d %b', fecha)"
+                date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 29 DAY"
             elif timeframe == '12m':
-                date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 12 MONTH"
                 group_by = "STRFTIME('%Y-%m', fecha)"
-                label_fmt = "STRFTIME('%b %Y', fecha)"
-            else:  # 'all' - Histórico por año
-                date_filter = ""
+                date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 12 MONTH"
+            else:
                 group_by = "STRFTIME('%Y', fecha)"
-                label_fmt = "STRFTIME('%Y', fecha)"
+                date_filter = ""
 
             query = f"""
                 SELECT 
                     {group_by} AS group_key,
-                    MIN(fecha) AS label_date,
                     SUM(weight * reps) AS total_volume,
                     MAX(weight * (1 + reps / 30.0)) AS max_est_1rm,
                     MAX(weight) AS max_weight,
@@ -174,24 +229,20 @@ class ExerciseService:
                 FROM v_workout
                 {date_filter} {"AND" if date_filter else "WHERE"} LOWER(ejercicio) = LOWER(?) AND weight IS NOT NULL
                 GROUP BY group_key
-                ORDER BY group_key ASC
             """
 
             rows = conn.execute(query, [ejercicio_nombre]).fetchall()
 
-            result = []
             for row in rows:
-                g_key, label_date, vol, rm, max_w, reps, sessions = row
-                result.append({
-                    "period": str(g_key),
-                    "label": str(label_date),
-                    "total_volume": round(float(vol or 0), 1),
-                    "max_estimated_1rm": round(float(rm or 0), 1),
-                    "max_weight": round(float(max_w or 0), 1),
-                    "total_reps": int(reps or 0),
-                    "total_sessions": int(sessions or 0)
-                })
+                g_key, vol, rm, max_w, reps, sessions = row
+                g_key_str = str(g_key)
+                if g_key_str in series_dict:
+                    series_dict[g_key_str]["total_volume"] = round(float(vol or 0), 1)
+                    series_dict[g_key_str]["max_estimated_1rm"] = round(float(rm or 0), 1)
+                    series_dict[g_key_str]["max_weight"] = round(float(max_w or 0), 1)
+                    series_dict[g_key_str]["total_reps"] = int(reps or 0)
+                    series_dict[g_key_str]["total_sessions"] = int(sessions or 0)
 
-            return result
+            return list(series_dict.values())
         finally:
             conn.close()
