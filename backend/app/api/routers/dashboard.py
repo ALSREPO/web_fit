@@ -15,7 +15,8 @@ from backend.app.models.dashboard import (
     CompactCalendarResponse,
     DayDetailResponse,
     ExerciseMaxWeightResponse,
-    ExerciseSessionHistory
+    ExerciseSessionHistory,
+    ExerciseChartPoint
 )
 
 router = APIRouter(
@@ -57,9 +58,17 @@ async def get_exercise_max(ejercicio: str):
 
 
 @router.get("/exercise-history/{ejercicio}", response_model=List[ExerciseSessionHistory])
-async def get_exercise_history(ejercicio: str):
-    """
-    Devuelve todo el historial registrado de un ejercicio agrupado por días
-    y ordenado de la sesión más reciente a la más antigua.
-    """
-    return ExerciseService.get_exercise_history(ejercicio)
+async def get_exercise_history(
+    ejercicio: str, 
+    limit: int = 10, 
+    offset: int = 0
+):
+    return ExerciseService.get_exercise_history(ejercicio, limit=limit, offset=offset)
+
+
+@router.get("/exercise-chart/{ejercicio}", response_model=List[ExerciseChartPoint])
+async def get_exercise_chart(
+    ejercicio: str, 
+    timeframe: str = "30d"  # '7d', '30d', '12m', 'all'
+):
+    return ExerciseService.get_exercise_chart_data(ejercicio, timeframe)

@@ -137,3 +137,12 @@ class ExerciseSessionHistory(BaseModel):
     fecha: date
     total_volume_kg: Optional[float] = None
     sets: List[ExerciseSetDetail] = []
+
+class ExerciseChartPoint(BaseModel):
+    period: str
+    label: str
+    total_volume: float
+    max_estimated_1rm: float
+    max_weight: float
+    total_reps: int
+    total_sessions: int

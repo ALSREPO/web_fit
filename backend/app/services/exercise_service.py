@@ -1,9 +1,9 @@
 # backend/app/services/exercise_service.py
 
+from typing import List, Optional
 from datetime import date
-from typing import Optional, List
 from backend.app.database import get_db
-from backend.app.models.dashboard import ExerciseMaxWeightResponse, ExerciseSessionHistory, ExerciseSetDetail
+from backend.app.models.dashboard import ExerciseMaxWeightResponse, ExerciseSessionHistory, ExerciseSetDetail, ExerciseChartPoint
 
 
 class ExerciseService:
@@ -64,30 +64,40 @@ class ExerciseService:
 
         finally:
             conn.close()
-    
+
     @staticmethod
-    def get_exercise_history(ejercicio_nombre: str) -> List[ExerciseSessionHistory]:
+    def get_exercise_history(
+        ejercicio_nombre: str, 
+        limit: int = 10, 
+        offset: int = 0
+    ) -> List[ExerciseSessionHistory]:
         """
-        Obtiene el historial cronológico inverso de un ejercicio específico,
-        agrupando por fecha y desglosando las series de cada día.
+        Obtiene el historial cronológico inverso paginado.
         """
         conn = get_db()
         try:
+            # Subconsulta para obtener las fechas paginadas primero
             query = """
+                WITH target_dates AS (
+                    SELECT DISTINCT fecha
+                    FROM v_workout
+                    WHERE LOWER(ejercicio) = LOWER(?) AND weight IS NOT NULL
+                    ORDER BY fecha DESC
+                    LIMIT ? OFFSET ?
+                )
                 SELECT 
                     W.fecha,
                     W.weight,
                     W.reps,
                     W.comment
                 FROM v_workout W
-                WHERE LOWER(W.ejercicio) = LOWER(?)
-                  AND W.weight IS NOT NULL
+                JOIN target_dates D ON W.fecha = D.fecha
+                WHERE LOWER(W.ejercicio) = LOWER(?) AND W.weight IS NOT NULL
                 ORDER BY W.fecha DESC, W.id ASC
             """
             
-            rows = conn.execute(query, [ejercicio_nombre]).fetchall()
+            rows = conn.execute(query, [ejercicio_nombre, limit, offset, ejercicio_nombre]).fetchall()
 
-            # Agrupar series por fecha
             sessions_dict = {}
             for row in rows:
                 fecha_val, weight, reps, comment = row
@@ -123,6 +133,65 @@ class ExerciseService:
                 )
 
             return history
+        finally:
+            conn.close()
 
+    @staticmethod
+    def get_exercise_chart_data(ejercicio_nombre: str, timeframe: str) -> List[dict]:
+        """
+        Calcula agregaciones por periodo (semana/30días, 12meses, histórico).
+        timeframe opciones: '7d', '30d', '12m', 'all'
+        """
+        conn = get_db()
+        try:
+            # Definir filtro de fecha y agrupación según el timeframe
+            if timeframe == '7d':
+                date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 7 DAY"
+                group_by = "STRFTIME('%Y-%m-%d', fecha)"
+                label_fmt = "STRFTIME('%d %b', fecha)"
+            elif timeframe == '30d':
+                date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 30 DAY"
+                group_by = "STRFTIME('%Y-%m-%d', fecha)"
+                label_fmt = "STRFTIME('%d %b', fecha)"
+            elif timeframe == '12m':
+                date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 12 MONTH"
+                group_by = "STRFTIME('%Y-%m', fecha)"
+                label_fmt = "STRFTIME('%b %Y', fecha)"
+            else:  # 'all' - Histórico por año
+                date_filter = ""
+                group_by = "STRFTIME('%Y', fecha)"
+                label_fmt = "STRFTIME('%Y', fecha)"
+
+            query = f"""
+                SELECT 
+                    {group_by} AS group_key,
+                    MIN(fecha) AS label_date,
+                    SUM(weight * reps) AS total_volume,
+                    MAX(weight * (1 + reps / 30.0)) AS max_est_1rm,
+                    MAX(weight) AS max_weight,
+                    SUM(reps) AS total_reps,
+                    COUNT(DISTINCT fecha) AS total_sessions
+                FROM v_workout
+                {date_filter} {"AND" if date_filter else "WHERE"} LOWER(ejercicio) = LOWER(?) AND weight IS NOT NULL
+                GROUP BY group_key
+                ORDER BY group_key ASC
+            """
+
+            rows = conn.execute(query, [ejercicio_nombre]).fetchall()
+
+            result = []
+            for row in rows:
+                g_key, label_date, vol, rm, max_w, reps, sessions = row
+                result.append({
+                    "period": str(g_key),
+                    "label": str(label_date),
+                    "total_volume": round(float(vol or 0), 1),
+                    "max_estimated_1rm": round(float(rm or 0), 1),
+                    "max_weight": round(float(max_w or 0), 1),
+                    "total_reps": int(reps or 0),
+                    "total_sessions": int(sessions or 0)
+                })
+
+            return result
         finally:
             conn.close()
