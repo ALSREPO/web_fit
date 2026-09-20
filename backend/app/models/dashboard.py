@@ -114,3 +114,26 @@ class DayDetailResponse(BaseModel):
     total_distance_km: float = 0.0
     sessions: List[DaySessionDetail] = Field(default_factory=list)
     muscles: List[MuscleActivation] = Field(default_factory=list)
+
+
+class ExerciseMaxWeightResponse(BaseModel):
+    ejercicio: str = Field(..., description="Nombre del ejercicio consultado")
+    period_months: int = Field(3, description="Ventana de tiempo evaluada en meses")
+    max_weight: Optional[float] = Field(None, description="Peso máximo registrado en los últimos 3 meses")
+    weight_unit: Optional[str] = Field("kg", description="Unidad de peso")
+    reps_at_max: Optional[int] = Field(None, description="Repeticiones realizadas con el peso máximo")
+    estimated_1rm: Optional[float] = Field(None, description="1RM estimado (Epley) basado en la mejor serie del periodo")
+    last_performed_date: Optional[date] = Field(None, description="Fecha de la última vez que se realizó el ejercicio")
+    has_recent_data: bool = Field(..., description="Indica si hay registros en la ventana de 3 meses")
+
+
+class ExerciseSetDetail(BaseModel):
+    set_number: int
+    weight: Optional[float] = None
+    reps: Optional[int] = None
+    comment: Optional[str] = None
+
+class ExerciseSessionHistory(BaseModel):
+    fecha: date
+    total_volume_kg: Optional[float] = None
+    sets: List[ExerciseSetDetail] = []

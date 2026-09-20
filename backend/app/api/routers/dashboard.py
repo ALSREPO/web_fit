@@ -4,14 +4,18 @@
 
 from fastapi import APIRouter, Query
 from datetime import date
+from typing import List
 from backend.app.services.dashboard_service import DashboardService
 from backend.app.services.calendar_service import CalendarService
 from backend.app.services.day_detail_service import DayDetailService
+from backend.app.services.exercise_service import ExerciseService
 from backend.app.models.dashboard import (
     WorkoutCardResponse,
     MetricsSummaryResponse,
     CompactCalendarResponse,
-    DayDetailResponse
+    DayDetailResponse,
+    ExerciseMaxWeightResponse,
+    ExerciseSessionHistory
 )
 
 router = APIRouter(
@@ -41,3 +45,21 @@ async def get_calendar_compact(
 @router.get("/day-detail/{fecha}", response_model=DayDetailResponse)
 async def get_day_detail(fecha: date):
     return DayDetailService.get_day_detail(fecha)
+
+
+@router.get("/exercise-max/{ejercicio}", response_model=ExerciseMaxWeightResponse)
+async def get_exercise_max(ejercicio: str):
+    """
+    Obtiene el peso máximo alcanzado y el 1RM estimado para un ejercicio
+    específico dentro de los últimos 3 meses.
+    """
+    return ExerciseService.get_exercise_max_weight(ejercicio)
+
+
+@router.get("/exercise-history/{ejercicio}", response_model=List[ExerciseSessionHistory])
+async def get_exercise_history(ejercicio: str):
+    """
+    Devuelve todo el historial registrado de un ejercicio agrupado por días
+    y ordenado de la sesión más reciente a la más antigua.
+    """
+    return ExerciseService.get_exercise_history(ejercicio)
