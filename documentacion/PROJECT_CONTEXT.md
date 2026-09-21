@@ -116,7 +116,11 @@ Sí, y es sumamente sencillo. No necesitas rehacer el código ni aprender Java/K
 - [] **Pantalla Detalle del Día:** el mapa muscular es muy feo. Hay que hacerlo más estético
 - [x] **Pantalla Histórico de Ejercicios:** Se puede incluir la maratón en las estimaciones de Carrera, y los 100m en natación
 - [x] **Pantalla Histórico de Ejercicios:** Cambiar gráfico para hacer algunos indicadores de líneas, en vez de barras
+- [] **General**, al pulsar en la cabecera, ir al inicio. Y quitar PWA
+- [x] **Pantalla principal y calendario:** cambiar color de fondo del calendario para hacerlo más claro y que quede uniforme con el resto de tarjetas
+- [] **Pantalla principal:** resumen, que semana/mes ocupe toda la fila
 - [] **Multiusuario:** que se puedan registrar usuarios y cada uno vea sus entrenamientos
 - [] **Sistema de log dual:** que se guarde en fichero y que se muestre en consola
 - [] **Guardar y modificar los registros en una BBDD propia:** que no dependa de lo que guardo en fitnotes. Añadir la posibilidad de crear ejercicios nuevos, añadir sesiones de entrenamiento, modificar o borrar las antiguas...
 - [] **Obtener los ejercicios de garmin Connect:** relacionado con lo anterior, que se conecte a Garmin y guarde los registros en la BBDD
+- [] **BBDD - tipos de ejercicio:**, ahora los ejercicios son kg x reps, tiempo x distancia. Añadir variantes raras para paseo granjero...

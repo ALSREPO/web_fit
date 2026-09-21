@@ -151,105 +151,104 @@ Widget Calendario Compacto
 	});
 </script>
 
-<div class="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg backdrop-blur">
-<!-- Encabezado fijo arriba -->
-<div class="mb-3">
-	<h3 class="text-lg font-bold text-white">Calendario Mensual</h3>
-</div>
+<div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md space-y-4">
+    <!-- Encabezado fijo arriba -->
+    <div class="border-b border-slate-700/60 pb-3">
+        <h3 class="text-base font-bold text-slate-200">Calendario Mensual</h3>
+    </div>
 
-<!-- Barra de navegación (Mes / Año) a pantalla completa -->
-<div class="mb-4 flex w-full items-center gap-1.5">
-	<!-- Botón Mes Anterior -->
-	<button
-		type="button"
-		onclick={() => changeMonth(-1)}
-		class="shrink-0 rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-300 transition hover:bg-slate-700 hover:text-white"
-		aria-label="Mes anterior"
-	>
-		<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-		</svg>
-	</button>
+    <!-- Barra de navegación (Mes / Año) -->
+    <div class="flex w-full items-center gap-1.5">
+        <!-- Botón Mes Anterior -->
+        <button
+            type="button"
+            onclick={() => changeMonth(-1)}
+            class="shrink-0 rounded-lg border border-slate-700/60 bg-slate-900/50 p-2 text-slate-300 transition hover:bg-slate-700 hover:text-white"
+            aria-label="Mes anterior"
+        >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
 
-	<!-- Desplegable Mes (Ocupa todo el espacio restante disponible) -->
-	<select
-		bind:value={selectedMonth}
-		onchange={onSelectChange}
-		class="min-w-0 flex-1 truncate rounded-lg border border-slate-700 bg-slate-800 px-2 py-2 text-center text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-	>
-		{#each months as monthName, idx}
-			<option value={idx + 1}>{monthName}</option>
-		{/each}
-	</select>
+        <!-- Desplegable Mes -->
+        <select
+            bind:value={selectedMonth}
+            onchange={onSelectChange}
+            class="min-w-0 flex-1 truncate rounded-lg border border-slate-700/60 bg-slate-900/50 px-2 py-2 text-center text-xs font-medium text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+            {#each months as monthName, idx}
+                <option value={idx + 1} class="bg-slate-800 text-slate-200">{monthName}</option>
+            {/each}
+        </select>
 
-	<!-- Desplegable Año (Ancho fijo ajustado) -->
-	<select
-		bind:value={selectedYear}
-		onchange={onSelectChange}
-		class="w-20 shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-2 text-center text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-	>
-		{#each years as yr}
-			<option value={yr}>{yr}</option>
-		{/each}
-	</select>
+        <!-- Desplegable Año -->
+        <select
+            bind:value={selectedYear}
+            onchange={onSelectChange}
+            class="w-20 shrink-0 rounded-lg border border-slate-700/60 bg-slate-900/50 px-2 py-2 text-center text-xs font-medium text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+            {#each years as yr}
+                <option value={yr} class="bg-slate-800 text-slate-200">{yr}</option>
+            {/each}
+        </select>
 
-	<!-- Botón Mes Siguiente -->
-	<button
-		type="button"
-		onclick={() => changeMonth(1)}
-		class="shrink-0 rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-300 transition hover:bg-slate-700 hover:text-white"
-		aria-label="Mes siguiente"
-	>
-		<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-		</svg>
-	</button>
-</div>
+        <!-- Botón Mes Siguiente -->
+        <button
+            type="button"
+            onclick={() => changeMonth(1)}
+            class="shrink-0 rounded-lg border border-slate-700/60 bg-slate-900/50 p-2 text-slate-300 transition hover:bg-slate-700 hover:text-white"
+            aria-label="Mes siguiente"
+        >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+    </div>
 
+    <!-- Leyenda de colores -->
+    <div class="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700/40 bg-slate-900/50 p-2.5 text-xs text-slate-400">
+        <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-red-500"></span> Fuerza</span>
+        <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Carrera</span>
+        <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span> Ciclismo</span>
+        <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-blue-500"></span> Natación</span>
+    </div>
 
-	<!-- Leyenda de colores expandida a todo el ancho (o centrada) -->
-	<div class="mb-4 flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800/80 bg-slate-900/60 p-2 text-xs text-slate-400">
-		<span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-red-500"></span> Fuerza</span>
-		<span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Carrera</span>
-		<span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span> Ciclismo</span>
-		<span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-blue-500"></span> Natación</span>
-	</div>
+    <!-- Grid del Calendario -->
+    {#if loading || internalLoading}
+        <div class="flex h-48 items-center justify-center text-xs text-slate-500">
+            Cargando calendario...
+        </div>
+    {:else}
+        <div class="grid grid-cols-7 gap-1 text-center">
+            <!-- Días de la semana -->
+            {#each weekDays as day}
+                <div class="py-1 text-xs font-semibold text-slate-400">
+                    {day}
+                </div>
+            {/each}
 
-	<!-- Grid del Calendario -->
-	{#if loading || internalLoading}
-		<div class="flex h-48 items-center justify-center text-sm text-slate-400">
-			Cargando calendario...
-		</div>
-	{:else}
-		<div class="grid grid-cols-7 gap-1 text-center">
-			<!-- Días de la semana -->
-			{#each weekDays as day}
-				<div class="py-1 text-xs font-semibold text-slate-400">
-					{day}
-				</div>
-			{/each}
+            <!-- Casillas de los días -->
+            {#each calendarGrid as cell}
+                {#if cell === null}
+                    <div class="h-10 rounded-lg bg-transparent"></div>
+                {:else}
+                    <button
+                        type="button"
+                        onclick={() => goToDayDetail(cell.dateStr)}
+                        class="group relative flex h-10 flex-col items-center justify-between rounded-lg border border-slate-700/40 bg-slate-900/40 p-1 text-xs text-slate-200 transition hover:border-blue-500/50 hover:bg-slate-700/50"
+                    >
+                        <span>{cell.dayNumber}</span>
 
-			<!-- Casillas de los días -->
-			{#each calendarGrid as cell}
-				{#if cell === null}
-					<div class="h-10 rounded-lg bg-transparent"></div>
-				{:else}
-					<button
-						type="button"
-						onclick={() => goToDayDetail(cell.dateStr)}
-						class="group relative flex h-10 flex-col items-center justify-between rounded-lg border border-slate-800/60 bg-slate-800/30 p-1 text-xs text-slate-200 transition hover:border-blue-500/50 hover:bg-slate-800"
-					>
-						<span>{cell.dayNumber}</span>
-
-						<!-- Puntos de disciplinas entrenadas ese día -->
-						<div class="flex items-center justify-center space-x-1">
-							{#each cell.workouts as workoutType}
-								<span class="h-1.5 w-1.5 rounded-full {getDotColorClass(workoutType)}"></span>
-							{/each}
-						</div>
-					</button>
-				{/if}
-			{/each}
-		</div>
-	{/if}
+                        <!-- Puntos de disciplinas entrenadas ese día -->
+                        <div class="flex items-center justify-center space-x-1">
+                            {#each cell.workouts as workoutType}
+                                <span class="h-1.5 w-1.5 rounded-full {getDotColorClass(workoutType)}"></span>
+                            {/each}
+                        </div>
+                    </button>
+                {/if}
+            {/each}
+        </div>
+    {/if}
 </div>

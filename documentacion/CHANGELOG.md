@@ -6,7 +6,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [0.5.x] - Correcciones menores - 2026-09-21
 
-- **BBDD:**0.5.4, permitir entrar ejercicios nuevos, que no tienen "tipo de ejercicio"
+- **Pantalla principal y calendario:** 0.5.5 cambiar color de fondo del calendario para hacerlo más claro y que quede uniforme con el resto de tarjetas
+- **BBDD:** 0.5.4, permitir entrar ejercicios nuevos, que no tienen "tipo de ejercicio"
 - **Pantalla Inicio:** 0.5.3, cambiar el gráfico para que sea similar al de "Pantalla Histórico de Ejercicios"
 - **Pantalla Histórico de Ejercicios:** 0.5.2, cambiar gráfico para hacer algunos indicadores de líneas, en vez de barras
 - **Pantalla Histórico de Ejercicios:** 0.5.0, incluir la maratón en las estimaciones de Carrera, y los 100m en natación
