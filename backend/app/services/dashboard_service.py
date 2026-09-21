@@ -2,12 +2,15 @@
 # Servicio del Dashboard Principal
 # Módulo para obtener próximo entrenamiento, último entrenamiento y resumen de métricas
 
-from datetime import date, datetime, timedelta
-from calendar import monthrange
+from datetime import date, timedelta
+from typing import Dict, Any, List
 from backend.app.database import get_db
 
 class DashboardService:
 
+    DIAS_ESP = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+    MESES_ESP = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    
     @staticmethod
     def _format_spanish_date(d: date) -> str:
         days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
@@ -103,40 +106,84 @@ class DashboardService:
     def get_next_workout():
         return DashboardService._get_workout_card_data(is_past=False)
 
-
     @staticmethod
-    def get_summary(period: str = "week"):
+    def get_summary(period: str = "week") -> Dict[str, Any]:
         conn = get_db()
         try:
             today = date.today()
+            timeframe_list = []
+            series_dict = {}
+
             where_clause = ""
             params = []
 
-            # 1. Definir rangos de fecha según el periodo
-            if period == "week":
-                start_date = today - timedelta(days=today.weekday())
-                end_date = start_date + timedelta(days=6)
+            # 1. Definir rango de fechas y generar la serie temporal completa
+            if period in ["week", "7d"]:
+                start_date = today - timedelta(days=6)
+                end_date = today
                 where_clause = "WHERE fecha BETWEEN ? AND ?"
                 params = [start_date, end_date]
 
-            elif period == "month":
-                start_date = date(today.year, today.month, 1)
-                _, last_day = monthrange(today.year, today.month)
-                end_date = date(today.year, today.month, last_day)
+                curr = start_date
+                while curr <= today:
+                    key = curr.strftime('%Y-%m-%d')
+                    label_str = DashboardService.DIAS_ESP[curr.weekday()]
+                    timeframe_list.append((key, label_str))
+                    curr += timedelta(days=1)
+
+            elif period in ["month", "30d"]:
+                start_date = today - timedelta(days=29)
+                end_date = today
                 where_clause = "WHERE fecha BETWEEN ? AND ?"
                 params = [start_date, end_date]
 
-            elif period == "year":
-                start_date = date(today.year, 1, 1)
-                end_date = date(today.year, 12, 31)
-                where_clause = "WHERE fecha BETWEEN ? AND ?"
-                params = [start_date, end_date]
+                curr = start_date
+                while curr <= today:
+                    key = curr.strftime('%Y-%m-%d')
+                    label_str = curr.strftime('%d')
+                    timeframe_list.append((key, label_str))
+                    curr += timedelta(days=1)
+
+            elif period in ["year", "12m"]:
+                start_date = date(today.year - 1, today.month, 1)  # Aprox hace 12 meses
+                end_date = today
+                # Para filtrar exactamente los últimos 12 meses completos en DuckDB:
+                where_clause = "WHERE fecha >= CURRENT_DATE - INTERVAL 12 MONTH"
+                params = []
+
+                for i in range(11, -1, -1):
+                    y = today.year
+                    m = today.month - i
+                    while m <= 0:
+                        m += 12
+                        y -= 1
+                    dt = date(y, m, 1)
+                    key = dt.strftime('%Y-%m')
+                    label_str = DashboardService.MESES_ESP[dt.month - 1]
+                    timeframe_list.append((key, label_str))
 
             elif period in ["all", "historico"]:
                 where_clause = ""
                 params = []
 
-            # 2. KPIs Globales
+                min_year_row = conn.execute("SELECT MIN(YEAR(fecha)) FROM v_resumen_diario").fetchone()
+                start_year = min_year_row[0] if min_year_row and min_year_row[0] else today.year
+
+                for y in range(start_year, today.year + 1):
+                    key = str(y)
+                    label_str = str(y)
+                    timeframe_list.append((key, label_str))
+
+            # 2. Inicializar la estructura con valores a 0 para todos los periodos
+            for key, label_str in timeframe_list:
+                series_dict[key] = {
+                    "label": label_str,
+                    "volume_kg": 0.0,
+                    "distance_km": 0.0,
+                    "sessions_count": 0
+                }
+
+            # 3. KPIs Globales del periodo seleccionado
             query_kpis = f"""
                 SELECT 
                     COUNT(DISTINCT fecha) as days_count,
@@ -151,127 +198,42 @@ class DashboardService:
             kpis = {
                 "days_count": kpi_row[0] or 0,
                 "sessions_count": kpi_row[1] or 0,
-                "total_volume_kg": round(kpi_row[2] or 0, 2),
-                "total_distance_km": round((kpi_row[3] or 0) / 1000.0, 2) if (kpi_row[3] and kpi_row[3] > 50) else round(kpi_row[3] or 0, 2)
+                "total_volume_kg": round(float(kpi_row[2] or 0), 2),
+                "total_distance_km": round(float(kpi_row[3] or 0) / 1000.0, 2) if (kpi_row[3] and kpi_row[3] > 50) else round(float(kpi_row[3] or 0), 2)
             }
 
-            # 3. Gráfico por Tiempo (chart_by_time) con agrupación dinámica
-            chart_by_time = []
+            # 4. Gráfico por Tiempo (chart_by_time)
+            if period in ["week", "7d", "month", "30d"]:
+                group_by = "STRFTIME('%Y-%m-%d', fecha)"
+            elif period in ["year", "12m"]:
+                group_by = "STRFTIME('%Y-%m', fecha)"
+            else:  # all / historico
+                group_by = "STRFTIME('%Y', fecha)"
 
-            if period == "week":
-                days_es = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
-                query_time = f"""
-                    SELECT 
-                        fecha,
-                        COUNT(*) as sessions_count,
-                        COALESCE(SUM(volumen_total), 0) as volume_kg,
-                        COALESCE(SUM(distance), 0) as distance
-                    FROM v_workout
-                    {where_clause}
-                    GROUP BY fecha
-                """
-                time_rows = conn.execute(query_time, params).fetchall()
-                time_map = {row[0]: row for row in time_rows}
+            query_time = f"""
+                SELECT 
+                    {group_by} as group_key,
+                    COUNT(*) as sessions_count,
+                    COALESCE(SUM(volumen_total), 0) as volume_kg,
+                    COALESCE(SUM(distance), 0) as distance
+                FROM v_workout
+                {where_clause}
+                GROUP BY group_key
+            """
+            time_rows = conn.execute(query_time, params).fetchall()
 
-                for i in range(7):
-                    current_day = start_date + timedelta(days=i)
-                    if current_day in time_map:
-                        r = time_map[current_day]
-                        dist = r[3] or 0
-                        chart_by_time.append({
-                            "label": days_es[i],
-                            "volume_kg": round(r[2] or 0, 2),
-                            "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
-                            "sessions_count": r[1]
-                        })
-                    else:
-                        chart_by_time.append({
-                            "label": days_es[i],
-                            "volume_kg": 0,
-                            "distance_km": 0,
-                            "sessions_count": 0
-                        })
+            for row in time_rows:
+                g_key, count, vol, dist = row
+                g_key_str = str(g_key)
+                if g_key_str in series_dict:
+                    dist_val = dist or 0.0
+                    series_dict[g_key_str]["sessions_count"] = count or 0
+                    series_dict[g_key_str]["volume_kg"] = round(float(vol or 0), 2)
+                    series_dict[g_key_str]["distance_km"] = round(float(dist_val / 1000.0), 2) if dist_val > 50 else round(float(dist_val), 2)
 
-            elif period == "month":
-                query_time = f"""
-                    SELECT 
-                        STRFTIME(fecha, '%Y-%m-%d') as label,
-                        COUNT(*) as sessions_count,
-                        COALESCE(SUM(volumen_total), 0) as volume_kg,
-                        COALESCE(SUM(distance), 0) as distance
-                    FROM v_workout
-                    {where_clause}
-                    GROUP BY fecha
-                    ORDER BY fecha ASC
-                """
-                time_rows = conn.execute(query_time, params).fetchall()
-                for label, count, vol, dist in time_rows:
-                    dist = dist or 0
-                    chart_by_time.append({
-                        "label": str(label),
-                        "volume_kg": round(vol or 0, 2),
-                        "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
-                        "sessions_count": count
-                    })
+            chart_by_time = list(series_dict.values())
 
-            elif period == "year":
-                # Agrupado por Mes (01 a 12) rellenando los 12 meses
-                months_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-                query_time = f"""
-                    SELECT 
-                        MONTH(fecha) as num_mes,
-                        COUNT(*) as sessions_count,
-                        COALESCE(SUM(volumen_total), 0) as volume_kg,
-                        COALESCE(SUM(distance), 0) as distance
-                    FROM v_workout
-                    {where_clause}
-                    GROUP BY MONTH(fecha)
-                """
-                time_rows = conn.execute(query_time, params).fetchall()
-                time_map = {row[0]: row for row in time_rows}
-
-                for m in range(1, 13):
-                    if m in time_map:
-                        r = time_map[m]
-                        dist = r[3] or 0
-                        chart_by_time.append({
-                            "label": months_es[m - 1],
-                            "volume_kg": round(r[2] or 0, 2),
-                            "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
-                            "sessions_count": r[1]
-                        })
-                    else:
-                        chart_by_time.append({
-                            "label": months_es[m - 1],
-                            "volume_kg": 0,
-                            "distance_km": 0,
-                            "sessions_count": 0
-                        })
-
-            elif period in ["all", "historico"]:
-                # Agrupado por Año (%Y)
-                query_time = f"""
-                    SELECT 
-                        STRFTIME(fecha, '%Y') as label,
-                        COUNT(*) as sessions_count,
-                        COALESCE(SUM(volumen_total), 0) as volume_kg,
-                        COALESCE(SUM(distance), 0) as distance
-                    FROM v_workout
-                    {where_clause}
-                    GROUP BY STRFTIME(fecha, '%Y')
-                    ORDER BY label ASC
-                """
-                time_rows = conn.execute(query_time, params).fetchall()
-                for label, count, vol, dist in time_rows:
-                    dist = dist or 0
-                    chart_by_time.append({
-                        "label": str(label),
-                        "volume_kg": round(vol or 0, 2),
-                        "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
-                        "sessions_count": count
-                    })
-
-            # 4. Gráfico por Tipo (chart_by_type)
+            # 5. Gráfico por Tipo de Ejercicio (chart_by_type)
             query_type = f"""
                 SELECT 
                     COALESCE(tipo_ejercicio, 'Otros') as label,
@@ -287,11 +249,11 @@ class DashboardService:
 
             chart_by_type = []
             for label, count, vol, dist in type_rows:
-                dist = dist or 0
+                dist_val = dist or 0.0
                 chart_by_type.append({
                     "label": str(label),
-                    "volume_kg": round(vol or 0, 2),
-                    "distance_km": round(dist / 1000.0, 2) if dist > 50 else round(dist, 2),
+                    "volume_kg": round(float(vol or 0), 2),
+                    "distance_km": round(float(dist_val / 1000.0), 2) if dist_val > 50 else round(float(dist_val), 2),
                     "sessions_count": count
                 })
 
@@ -301,5 +263,6 @@ class DashboardService:
                 "chart_by_time": chart_by_time,
                 "chart_by_type": chart_by_type
             }
+
         finally:
             conn.close()
