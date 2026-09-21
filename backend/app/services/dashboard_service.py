@@ -213,10 +213,10 @@ class DashboardService:
             query_time = f"""
                 SELECT 
                     {group_by} as group_key,
-                    COUNT(*) as sessions_count,
+                    COALESCE(SUM(n_tipo_ejercicio), 0) as sessions_count,
                     COALESCE(SUM(volumen_total), 0) as volume_kg,
                     COALESCE(SUM(distance), 0) as distance
-                FROM v_workout
+                FROM v_resumen_diario
                 {where_clause}
                 GROUP BY group_key
             """
@@ -237,10 +237,10 @@ class DashboardService:
             query_type = f"""
                 SELECT 
                     COALESCE(tipo_ejercicio, 'Otros') as label,
-                    COUNT(*) as sessions_count,
+                    COALESCE(SUM(n_tipo_ejercicio), 0) as sessions_count,
                     COALESCE(SUM(volumen_total), 0) as volume_kg,
                     COALESCE(SUM(distance), 0) as distance
-                FROM v_workout
+                FROM v_resumen_diario
                 {where_clause}
                 GROUP BY COALESCE(tipo_ejercicio, 'Otros')
                 ORDER BY sessions_count DESC

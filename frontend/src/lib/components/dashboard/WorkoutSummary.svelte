@@ -126,7 +126,7 @@
     <!-- Tarjetas KPI -->
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-2">
         <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center">
-            <span class="text-xs font-medium text-slate-400">Entrenos</span>
+            <span class="text-xs font-medium text-slate-400">Días</span>
             <p class="mt-1 text-2xl font-bold text-slate-100">
                 {loading ? '...' : summaryData?.kpis?.days_count ?? 0}
             </p>
