@@ -1,7 +1,9 @@
 <!-- frontend/src/routes/historico/[ejercicio]/+page.svelte -->
 <script>
     import { page } from '$app/state';
-	import { dashboardApi } from '$lib/services';
+    import { goto } from '$app/navigation';
+    import { onMount } from 'svelte';
+    import { dashboardApi } from '$lib/services';
 
     import ExerciseStatsCards from '$lib/components/historico/ExerciseStatsCards.svelte';
     import ExerciseChart from '$lib/components/historico/ExerciseChart.svelte';
@@ -15,8 +17,19 @@
     let history = $state([]);
     let offset = $state(0);
     let hasMore = $state(true);
+    let exercisesList = $state([]);
 
     let ejercicio = $derived(decodeURIComponent(page.params.ejercicio || ''));
+
+    onMount(() => {
+        dashboardApi.getAllExercisesOrdered()
+            .then((res) => {
+                exercisesList = Array.isArray(res) ? res : [];
+            })
+            .catch(() => {
+                exercisesList = [];
+            });
+    });
 
     $effect(() => {
         const currentExercise = ejercicio;
@@ -45,6 +58,13 @@
             });
     });
 
+    function handleSelectChange(e) {
+        const selected = e.target.value;
+        if (selected && selected !== ejercicio) {
+            goto(`/historico/${encodeURIComponent(selected)}`);
+        }
+    }
+
     function loadMore() {
         if (loadingMore || !hasMore) return;
         loadingMore = true;
@@ -65,7 +85,6 @@
             });
     }
 
-    // Formato con año: "vie, 4 dic 2024"
     function formatDateWithYear(dateStr) {
         if (!dateStr) return '';
         const d = new Date(dateStr);
@@ -80,14 +99,36 @@
 
 <div class="space-y-4">
     <!-- Volver -->
-    <a href="/calendario" class="inline-flex items-center text-xs font-medium text-blue-400 hover:text-blue-300">
-        ← Volver
+    <a href="/historico" class="inline-flex items-center text-xs font-medium text-blue-400 hover:text-blue-300">
+        ← Volver al listado
     </a>
 
-    <!-- Cabecera -->
+    <!-- Cabecera con Selector Desplegable -->
     <header class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md">
         <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Histórico de Ejercicio</p>
-        <h2 class="mt-1 text-2xl font-bold text-white">{ejercicio}</h2>
+
+        <div class="relative mt-2">
+            <select
+                value={ejercicio}
+                onchange={handleSelectChange}
+                class="w-full appearance-none rounded-xl border border-slate-700/80 bg-slate-900/90 py-2 pl-3 pr-8 text-xl font-bold text-white shadow-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer"
+            >
+                {#if !exercisesList.some(e => (e.nombre || e.ejercicio) === ejercicio)}
+                    <option value={ejercicio}>{ejercicio}</option>
+                {/if}
+                {#each exercisesList as ex}
+                    {@const name = ex.nombre || ex.ejercicio}
+                    <option value={name}>
+                        {name} {ex.recent_volume > 0 ? '🔥' : ''}
+                    </option>
+                {/each}
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </div>
+        </div>
     </header>
 
     {#if loading}
@@ -99,13 +140,9 @@
     {:else if error}
         <p class="rounded-xl border border-rose-900/60 bg-rose-950/40 p-4 text-sm text-rose-300">{error}</p>
     {:else}
-        <!-- KPIs y Récords -->
         <ExerciseStatsCards stats={maxStats} />
-
-        <!-- Gráfico Multi-Métrica y Multi-Temporal -->
         <ExerciseChart {ejercicio} />
 
-        <!-- Lista de Histórico de sesiones (Paginada) -->
         <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 shadow-md">
             <h3 class="mb-3 text-base font-semibold text-white">Histórico de sesiones</h3>
 
@@ -143,7 +180,6 @@
                     {/each}
                 </div>
 
-                <!-- Botón Cargar Más -->
                 {#if hasMore}
                     <button
                         type="button"
