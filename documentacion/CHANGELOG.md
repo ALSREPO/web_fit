@@ -5,7 +5,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ---
 
-## [0.4.10] - Módulo 5: Histórico del Ejercicio y Proyecciones Cardio - 2026-09-21
+## [0.4.12] - Módulo 5: Histórico del Ejercicio y Proyecciones Cardio - 2026-09-21
 
 ### Added
 - **Backend (FastAPI & DuckDB):**
