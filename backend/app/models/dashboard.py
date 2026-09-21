@@ -126,16 +126,21 @@ class ExerciseMaxWeightResponse(BaseModel):
     last_performed_date: Optional[date] = Field(None, description="Fecha de la última vez que se realizó el ejercicio")
     has_recent_data: bool = Field(..., description="Indica si hay registros en la ventana de 3 meses")
 
-
 class ExerciseSetDetail(BaseModel):
     set_number: int
     weight: Optional[float] = None
     reps: Optional[int] = None
     comment: Optional[str] = None
+    # Campos para Cardio
+    distance: Optional[float] = None
+    distance_unit: Optional[str] = None
+    tiempo_segundos: Optional[float] = None
+    ritmo_min_km: Optional[float] = None
 
 class ExerciseSessionHistory(BaseModel):
     fecha: date
     total_volume_kg: Optional[float] = None
+    total_distance: Optional[float] = None
     sets: List[ExerciseSetDetail] = []
 
 class ExerciseChartPoint(BaseModel):
@@ -146,8 +151,12 @@ class ExerciseChartPoint(BaseModel):
     max_weight: float
     total_reps: int
     total_sessions: int
+    # Métrica acumulada para ejercicios aeróbicos/cardio
+    total_distance: float = 0.0
+    total_time_seconds: float = 0.0
+    avg_ritmo_min_km: float = 0.0
 
 class AllExercisesOrdered(BaseModel):
     nombre: str
     recent_volume: float = 0.0
-    last_performed: date
+    last_performed: Optional[date] = None

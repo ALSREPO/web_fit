@@ -1,9 +1,12 @@
-# backend/app/services/exercise_service.py
-
 from typing import List, Optional, Dict, Any
 from datetime import date, timedelta
 from backend.app.database import get_db
-from backend.app.models.dashboard import ExerciseMaxWeightResponse, ExerciseSessionHistory, ExerciseSetDetail, ExerciseChartPoint
+from backend.app.models.dashboard import (
+    ExerciseMaxWeightResponse,
+    ExerciseSessionHistory,
+    ExerciseSetDetail,
+    ExerciseChartPoint
+)
 
 
 class ExerciseService:
@@ -19,20 +22,17 @@ class ExerciseService:
         """
         conn = get_db()
         try:
-            # 1. Obtener el registro con mayor peso en los últimos 3 meses
-            # Usamos DATE_TRUNC o la fecha máxima del sistema como referencia
             query = """
                 SELECT 
                     W.weight,
                     W.weight_unit,
                     W.reps,
                     W.fecha,
-                    -- Fórmula de 1RM Estimado (Epley): Weight * (1 + Reps / 30)
                     ROUND(W.weight * (1 + (W.reps / 30.0)), 2) as estimated_1rm
                 FROM v_workout W
                 WHERE LOWER(W.ejercicio) = LOWER(?)
                   AND W.weight IS NOT NULL
-                  AND W.fecha between (CURRENT_DATE - INTERVAL '3 months') and  CURRENT_DATE
+                  AND W.fecha between (CURRENT_DATE - INTERVAL '3 months') and CURRENT_DATE
                 ORDER BY W.weight DESC, estimated_1rm DESC, W.fecha DESC
                 LIMIT 1
             """
@@ -40,7 +40,6 @@ class ExerciseService:
             row = conn.execute(query, [ejercicio_nombre]).fetchone()
 
             if not row:
-                # Caso: No hay entrenamientos registrados en los últimos 3 meses
                 return ExerciseMaxWeightResponse(
                     ejercicio=ejercicio_nombre,
                     period_months=3,
@@ -75,16 +74,20 @@ class ExerciseService:
         offset: int = 0
     ) -> List[ExerciseSessionHistory]:
         """
-        Obtiene el historial cronológico inverso paginado.
+        Obtiene el historial cronológico inverso paginado (Soporta fuerza y cardio).
         """
         conn = get_db()
         try:
-            # Subconsulta para obtener las fechas paginadas primero
             query = """
                 WITH target_dates AS (
                     SELECT DISTINCT fecha
                     FROM v_workout
-                    WHERE LOWER(ejercicio) = LOWER(?) AND weight IS NOT NULL
+                    WHERE LOWER(ejercicio) = LOWER(?) AND 
+                        (coalesce(weight,0) != 0 or
+                         coalesce(reps,0) != 0 or
+                         coalesce(distance,0) != 0 or
+                         coalesce(tiempo_segundos,0) != 0
+                        )
                     ORDER BY fecha DESC
                     LIMIT ? OFFSET ?
                 )
@@ -92,10 +95,19 @@ class ExerciseService:
                     W.fecha,
                     W.weight,
                     W.reps,
-                    W.comment
+                    W.comment,
+                    W.distance,
+                    W.distance_unit,
+                    W.tiempo_segundos,
+                    W.ritmo_min_km
                 FROM v_workout W
                 JOIN target_dates D ON W.fecha = D.fecha
-                WHERE LOWER(W.ejercicio) = LOWER(?) AND W.weight IS NOT NULL
+                WHERE LOWER(W.ejercicio) = LOWER(?) AND 
+                        (coalesce(W.weight,0) != 0 or
+                         coalesce(W.reps,0) != 0 or
+                         coalesce(W.distance,0) != 0 or
+                         coalesce(W.tiempo_segundos,0) != 0
+                        )
                 ORDER BY W.fecha DESC, W.id ASC
             """
             
@@ -103,27 +115,37 @@ class ExerciseService:
 
             sessions_dict = {}
             for row in rows:
-                fecha_val, weight, reps, comment = row
+                (
+                    fecha_val, weight, reps, comment,
+                    dist, dist_unit, t_seg, ritmo
+                ) = row
                 
                 if fecha_val not in sessions_dict:
                     sessions_dict[fecha_val] = {
                         "fecha": fecha_val,
                         "sets": [],
-                        "total_volume": 0.0
+                        "total_volume": 0.0,
+                        "total_distance": 0.0
                     }
                 
                 w = float(weight) if weight else 0.0
                 r = int(reps) if reps else 0
+                d = float(dist) if dist else 0.0
                 
                 sessions_dict[fecha_val]["sets"].append(
                     ExerciseSetDetail(
                         set_number=len(sessions_dict[fecha_val]["sets"]) + 1,
                         weight=w if w > 0 else None,
                         reps=r if r > 0 else None,
-                        comment=comment
+                        comment=comment,
+                        distance=d if d > 0 else None,
+                        distance_unit=dist_unit if dist else None,
+                        tiempo_segundos=float(t_seg) if t_seg else None,
+                        ritmo_min_km=ritmo if ritmo else None
                     )
                 )
                 sessions_dict[fecha_val]["total_volume"] += (w * r)
+                sessions_dict[fecha_val]["total_distance"] += d
 
             history = []
             for fecha_val, data in sessions_dict.items():
@@ -131,6 +153,7 @@ class ExerciseService:
                     ExerciseSessionHistory(
                         fecha=fecha_val,
                         total_volume_kg=round(data["total_volume"], 2) if data["total_volume"] > 0 else None,
+                        total_distance=round(data["total_distance"], 2) if data["total_distance"] > 0 else None,
                         sets=data["sets"]
                     )
                 )
@@ -147,8 +170,8 @@ class ExerciseService:
             series_dict = {}
             timeframe_list = []
 
-            # 1. Generar serie temporal completa con etiquetas en español
-            if timeframe == '7d': # Semana
+            # 1. Generar serie temporal completa
+            if timeframe == '7d':
                 start_date = today - timedelta(days=6)
                 curr = start_date
                 while curr <= today:
@@ -157,16 +180,16 @@ class ExerciseService:
                     timeframe_list.append((key, label_str, curr))
                     curr += timedelta(days=1)
 
-            elif timeframe == '30d': # Mes (30 días)
+            elif timeframe == '30d':
                 start_date = today - timedelta(days=29)
                 curr = start_date
                 while curr <= today:
                     key = curr.strftime('%Y-%m-%d')
-                    label_str = curr.strftime('%d') # "01", "02"...
+                    label_str = curr.strftime('%d')
                     timeframe_list.append((key, label_str, curr))
                     curr += timedelta(days=1)
 
-            elif timeframe == '12m': # Año (Últimos 12 meses)
+            elif timeframe == '12m':
                 for i in range(11, -1, -1):
                     y = today.year
                     m = today.month - i
@@ -178,9 +201,9 @@ class ExerciseService:
                     label_str = ExerciseService.MESES_ESP[dt.month - 1]
                     timeframe_list.append((key, label_str, dt))
 
-            else: # 'all' - Histórico por años
+            else:  # 'all'
                 min_year_row = conn.execute(
-                    "SELECT MIN(YEAR(fecha)) FROM v_workout WHERE LOWER(ejercicio) = LOWER(?) AND weight IS NOT NULL",
+                    "SELECT MIN(YEAR(fecha)) FROM v_workout WHERE LOWER(ejercicio) = LOWER(?)",
                     [ejercicio_nombre]
                 ).fetchone()
                 start_year = min_year_row[0] if min_year_row and min_year_row[0] else today.year
@@ -191,7 +214,7 @@ class ExerciseService:
                     label_str = str(y)
                     timeframe_list.append((key, label_str, dt))
 
-            # Inicializar estrucutra con valor 0
+            # Inicializar estructura
             for key, label_str, dt_obj in timeframe_list:
                 series_dict[key] = {
                     "period": key,
@@ -201,10 +224,13 @@ class ExerciseService:
                     "max_estimated_1rm": 0.0,
                     "max_weight": 0.0,
                     "total_reps": 0,
-                    "total_sessions": 0
+                    "total_sessions": 0,
+                    "total_distance": 0.0,
+                    "total_time_seconds": 0.0,
+                    "avg_ritmo_min_km": 0.0
                 }
 
-            # 2. Consultar registros de DuckDB
+            # 2. Consultar registros DuckDB (Removido 'AND weight IS NOT NULL' para incluir cardio)
             if timeframe == '7d':
                 group_by = "STRFTIME('%Y-%m-%d', fecha)"
                 date_filter = "WHERE fecha >= CURRENT_DATE - INTERVAL 6 DAY"
@@ -221,20 +247,23 @@ class ExerciseService:
             query = f"""
                 SELECT 
                     {group_by} AS group_key,
-                    SUM(weight * reps) AS total_volume,
-                    MAX(weight * (1 + reps / 30.0)) AS max_est_1rm,
-                    MAX(weight) AS max_weight,
-                    SUM(reps) AS total_reps,
-                    COUNT(DISTINCT fecha) AS total_sessions
+                    SUM(coalesce(weight, 0) * coalesce(reps, 0)) AS total_volume,
+                    MAX(CASE WHEN weight IS NOT NULL THEN weight * (1 + coalesce(reps, 0) / 30.0) ELSE 0 END) AS max_est_1rm,
+                    MAX(coalesce(weight, 0)) AS max_weight,
+                    SUM(coalesce(reps, 0)) AS total_reps,
+                    COUNT(DISTINCT fecha) AS total_sessions,
+                    SUM(coalesce(distance, 0)) AS total_distance,
+                    SUM(coalesce(tiempo_segundos, 0)) AS total_time_seconds,
+                    AVG(coalesce(ritmo_min_km, 0)) AS avg_ritmo_min_km
                 FROM v_workout
-                {date_filter} {"AND" if date_filter else "WHERE"} LOWER(ejercicio) = LOWER(?) AND weight IS NOT NULL
+                {date_filter} {"AND" if date_filter else "WHERE"} LOWER(ejercicio) = LOWER(?)
                 GROUP BY group_key
             """
 
             rows = conn.execute(query, [ejercicio_nombre]).fetchall()
 
             for row in rows:
-                g_key, vol, rm, max_w, reps, sessions = row
+                g_key, vol, rm, max_w, reps, sessions, dist, t_seg, avg_ritmo = row
                 g_key_str = str(g_key)
                 if g_key_str in series_dict:
                     series_dict[g_key_str]["total_volume"] = round(float(vol or 0), 1)
@@ -242,6 +271,9 @@ class ExerciseService:
                     series_dict[g_key_str]["max_weight"] = round(float(max_w or 0), 1)
                     series_dict[g_key_str]["total_reps"] = int(reps or 0)
                     series_dict[g_key_str]["total_sessions"] = int(sessions or 0)
+                    series_dict[g_key_str]["total_distance"] = round(float(dist or 0), 2)
+                    series_dict[g_key_str]["total_time_seconds"] = round(float(t_seg or 0), 1)
+                    series_dict[g_key_str]["avg_ritmo_min_km"] = round(float(avg_ritmo or 0), 2)
 
             return list(series_dict.values())
         finally:
@@ -251,7 +283,6 @@ class ExerciseService:
     def get_all_exercises_ordered() -> List[Dict[str, Any]]:
         conn = get_db()
         try:
-            # Selecciona todos los ejercicios distintos calculando el volumen reciente (últimos 90 días)
             query = """
                 SELECT 
                     ejercicio,
