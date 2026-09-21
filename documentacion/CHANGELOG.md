@@ -6,6 +6,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [0.5.x] - Correcciones menores - 2026-09-21
 
+- **General:** 0.5.8, al pulsar en la cabecera, ir al inicio. Cambiar PWA por ALS. Cambiar el nombre e icono de la aplicación
 - **Pantalla principal:** 0.5.7, resumen, que semana/mes ocupe toda la fila
 - **Pantalla principal y calendario:** 0.5.5 cambiar color de fondo del calendario para hacerlo más claro y que quede uniforme con el resto de tarjetas
 - **BBDD:** 0.5.4, permitir entrar ejercicios nuevos, que no tienen "tipo de ejercicio"
