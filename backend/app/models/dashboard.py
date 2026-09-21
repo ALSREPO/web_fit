@@ -116,15 +116,31 @@ class DayDetailResponse(BaseModel):
     muscles: List[MuscleActivation] = Field(default_factory=list)
 
 
+class CardioProjections(BaseModel):
+    best_pace_min_km: Optional[float] = None
+    dist_1k: Optional[str] = None     # Formato "4m 12s"
+    dist_5k: Optional[str] = None     # Formato "22m 15s"
+    dist_10k: Optional[str] = None    # Formato "46m 30s"
+    dist_21k: Optional[str] = None    # Media Maratón "1h 42m"
+    dist_42k: Optional[str] = None    # Maratón "3h 35m"
+
+
 class ExerciseMaxWeightResponse(BaseModel):
     ejercicio: str = Field(..., description="Nombre del ejercicio consultado")
     period_months: int = Field(3, description="Ventana de tiempo evaluada en meses")
+    has_recent_data: bool = Field(False, description="Indica si hay registros en la ventana de 3 meses")
+    is_cardio: bool = Field(False, description="Distingue entre Correr, Natación y Cilismo de los de Fuerza")
+    
+    # Campos de Fuerza
     max_weight: Optional[float] = Field(None, description="Peso máximo registrado en los últimos 3 meses")
     weight_unit: Optional[str] = Field("kg", description="Unidad de peso")
     reps_at_max: Optional[int] = Field(None, description="Repeticiones realizadas con el peso máximo")
     estimated_1rm: Optional[float] = Field(None, description="1RM estimado (Epley) basado en la mejor serie del periodo")
-    last_performed_date: Optional[date] = Field(None, description="Fecha de la última vez que se realizó el ejercicio")
-    has_recent_data: bool = Field(..., description="Indica si hay registros en la ventana de 3 meses")
+    
+    # Campos de Cardio
+    cardio_projections: Optional[CardioProjections] = Field(None, description="Estimaciones (Riegel) basado en la mejor serie del periodo")
+    last_performed_date: Optional[str] = Field(None, description="Fecha de la última vez que se realizó el ejercicio")
+    #last_performed_date: Optional[date] = Field(None, description="Fecha de la última vez que se realizó el ejercicio")
 
 class ExerciseSetDetail(BaseModel):
     set_number: int

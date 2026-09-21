@@ -1,7 +1,9 @@
 from typing import List, Optional, Dict, Any
 from datetime import date, timedelta
+from math import pow
 from backend.app.database import get_db
 from backend.app.models.dashboard import (
+    CardioProjections,
     ExerciseMaxWeightResponse,
     ExerciseSessionHistory,
     ExerciseSetDetail,
@@ -15,54 +17,124 @@ class ExerciseService:
     MESES_ESP = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
     @staticmethod
+    def _format_seconds(seconds: float) -> str:
+        """Convierte segundos a formato 'Xh Ym' o 'Xm Ys'"""
+        seconds = int(round(seconds))
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        secs = seconds % 60
+
+        if hours > 0:
+            return f"{hours}h {minutes:02d}m"
+        return f"{minutes}m {secs:02d}s"
+
+    @staticmethod
+    def _calculate_riegel_time(base_dist_m: float, base_time_s: float, target_dist_m: float) -> str:
+        """
+        Calcula la estimación de tiempo usando la fórmula de Riegel:
+        T2 = T1 * (D2 / D1)^1.06
+        """
+        if base_dist_m <= 0 or base_time_s <= 0:
+            return "N/A"
+        
+        t2_seconds = base_time_s * pow(target_dist_m / base_dist_m, 1.06)
+        return ExerciseService._format_seconds(t2_seconds)
+
+    @staticmethod
     def get_exercise_max_weight(ejercicio_nombre: str) -> ExerciseMaxWeightResponse:
-        """
-        Calcula el peso máximo y 1RM estimado para un ejercicio dentro
-        de la ventana acotada de los últimos 3 meses.
-        """
         conn = get_db()
         try:
-            query = """
-                SELECT 
-                    W.weight,
-                    W.weight_unit,
-                    W.reps,
-                    W.fecha,
-                    ROUND(W.weight * (1 + (W.reps / 30.0)), 2) as estimated_1rm
-                FROM v_workout W
-                WHERE LOWER(W.ejercicio) = LOWER(?)
-                  AND W.weight IS NOT NULL
-                  AND W.fecha between (CURRENT_DATE - INTERVAL '3 months') and CURRENT_DATE
-                ORDER BY W.weight DESC, estimated_1rm DESC, W.fecha DESC
-                LIMIT 1
-            """
-            
-            row = conn.execute(query, [ejercicio_nombre]).fetchone()
+            nombre_lower = ejercicio_nombre.lower()
+            is_cardio = any(k in nombre_lower for k in ['correr', 'nataci', 'ciclismo', 'running', 'natacion'])
 
-            if not row:
+            if is_cardio:
+                # --- LÓGICA CARDIO ---
+                # Buscamos la sesión con el mejor ritmo medio en los últimos 3 meses (distancia >= 1000m)
+                query_cardio = """
+                    SELECT 
+                        W.distance,
+                        W.tiempo_segundos,
+                        W.ritmo_min_km,
+                        W.fecha
+                    FROM v_workout W
+                    WHERE LOWER(W.ejercicio) = LOWER(?)
+                      AND W.distance IS NOT NULL
+                      AND W.distance >= 1000
+                      AND W.tiempo_segundos IS NOT NULL
+                      AND W.fecha BETWEEN (CURRENT_DATE - INTERVAL '3 months') AND CURRENT_DATE
+                    ORDER BY W.ritmo_min_km ASC
+                    LIMIT 1
+                """
+                row = conn.execute(query_cardio, [ejercicio_nombre]).fetchone()
+
+                if not row:
+                    return ExerciseMaxWeightResponse(
+                        ejercicio=ejercicio_nombre,
+                        period_months=3,
+                        has_recent_data=False,
+                        is_cardio=True
+                    )
+
+                distance_m, time_s, ritmo_min_km, fecha = row
+
+                # Calculamos proyecciones con Riegel partiendo de la mejor marca reciente
+                projections = CardioProjections(
+                    best_pace_min_km=round(float(ritmo_min_km), 2) if ritmo_min_km else None,
+                    dist_1k=ExerciseService._calculate_riegel_time(distance_m, time_s, 1000),
+                    dist_5k=ExerciseService._calculate_riegel_time(distance_m, time_s, 5000),
+                    dist_10k=ExerciseService._calculate_riegel_time(distance_m, time_s, 10000),
+                    dist_21k=ExerciseService._calculate_riegel_time(distance_m, time_s, 21097.5),
+                    dist_42k=ExerciseService._calculate_riegel_time(distance_m, time_s, 42195.0)
+                )
+
                 return ExerciseMaxWeightResponse(
                     ejercicio=ejercicio_nombre,
                     period_months=3,
-                    max_weight=None,
-                    weight_unit="kg",
-                    reps_at_max=None,
-                    estimated_1rm=None,
-                    last_performed_date=None,
-                    has_recent_data=False
+                    has_recent_data=True,
+                    is_cardio=True,
+                    cardio_projections=projections,
+                    last_performed_date=str(fecha)
                 )
 
-            weight, unit, reps, fecha_max, est_1rm = row
+            else:
+                # --- LÓGICA FUERZA ---
+                query_fuerza = """
+                    SELECT 
+                        W.weight,
+                        W.weight_unit,
+                        W.reps,
+                        W.fecha,
+                        ROUND(W.weight * (1 + (W.reps / 30.0)), 2) as estimated_1rm
+                    FROM v_workout W
+                    WHERE LOWER(W.ejercicio) = LOWER(?)
+                      AND W.weight IS NOT NULL
+                      AND W.fecha BETWEEN (CURRENT_DATE - INTERVAL '3 months') AND CURRENT_DATE
+                    ORDER BY W.weight DESC, estimated_1rm DESC, W.fecha DESC
+                    LIMIT 1
+                """
+                row = conn.execute(query_fuerza, [ejercicio_nombre]).fetchone()
 
-            return ExerciseMaxWeightResponse(
-                ejercicio=ejercicio_nombre,
-                period_months=3,
-                max_weight=float(weight),
-                weight_unit=unit or "kg",
-                reps_at_max=int(reps) if reps else None,
-                estimated_1rm=float(est_1rm) if est_1rm else None,
-                last_performed_date=fecha_max,
-                has_recent_data=True
-            )
+                if not row:
+                    return ExerciseMaxWeightResponse(
+                        ejercicio=ejercicio_nombre,
+                        period_months=3,
+                        has_recent_data=False,
+                        is_cardio=False
+                    )
+
+                weight, unit, reps, fecha_max, est_1rm = row
+
+                return ExerciseMaxWeightResponse(
+                    ejercicio=ejercicio_nombre,
+                    period_months=3,
+                    has_recent_data=True,
+                    is_cardio=False,
+                    max_weight=float(weight),
+                    weight_unit=unit or "kg",
+                    reps_at_max=int(reps) if reps else None,
+                    estimated_1rm=float(est_1rm) if est_1rm else None,
+                    last_performed_date=str(fecha_max)
+                )
 
         finally:
             conn.close()
