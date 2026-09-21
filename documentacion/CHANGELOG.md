@@ -5,6 +5,39 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ---
 
+## [0.4.10] - Módulo 5: Histórico del Ejercicio y Proyecciones Cardio - 2026-09-21
+
+### Added
+- **Backend (FastAPI & DuckDB):**
+  - Endpoint `GET /api/v1/exercises/max-weight/{ejercicio_nombre}` para obtener récords y proyecciones acotados a los últimos 3 meses.
+  - Clasificación automática de actividades por disciplina (`fuerza`, `running`, `cycling`, `swimming`).
+  - Cálculo de proyecciones de tiempo para actividades de cardio utilizando la **Fórmula de Riegel** ($T_2 = T_1 \times (D_2 / D_1)^{1.06}$).
+  - Adaptación de distancias clave y unidades de ritmo según la disciplina:
+    - **Correr:** Ritmo en `min/km` con estimaciones para 1k, 5k, 10k y 21k (Media Maratón).
+    - **Ciclismo:** Ritmo en `min/km` con estimaciones para 10k, 20k, 40km (Crono) y 90km (Half).
+    - **Natación:** Ritmo en `min/100m` con estimaciones para 400m, 800m, 1.500m y 3.800m (Ironman).
+- **Frontend (Svelte 5):**
+  - Componente `ExerciseStatsCards.svelte` rediseñado con maquetación simétrica entre Fuerza y Cardio:
+    - Bloque superior con 2 tarjetas clave (*Mejor Ritmo* y *Estimado 1K / Distancia base*).
+    - Bloque inferior con contenedor en cuadrícula para el resto de distancias objetivo adaptadas por disciplina.
+  - Integración de los esquemas Pydantic y llamadas API correspondientes en el cliente del frontend.
+
+### Fixed
+- **Query DuckDB en Cardio:** Eliminada la restricción `AND W.weight IS NOT NULL` en la consulta del servicio para permitir que los ejercicios de cardio (cuyo peso es `NULL`) recojan correctamente las actividades de los últimos 3 meses.
+
+---
+
+## [0.4.0] - Módulo 5: Pantalla de Histórico de Ejercicio - 2026-09-20
+
+### Added
+- **Backend:**
+  - Endpoints REST para la búsqueda de ejercicios y recuperación del historial de progresión individual.
+  - Vistas DuckDB `v_workout` optimizadas para agregar rendimiento por ejercicio.
+- **Frontend:**
+  - Vista `/historico/[ejercicio]` con soporte para la selección de ejercicios, gráficos de progresión en el tiempo y tabla detallada de repeticiones y pesos.
+
+---
+
 ## [0.3.0] - Módulo 4: Pantalla de Detalle del Día - 2026-09-10
 
 ### Added
