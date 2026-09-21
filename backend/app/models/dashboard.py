@@ -13,7 +13,7 @@ class ExerciseDetailItem(BaseModel):
 
 
 class WorkoutSessionDetail(BaseModel):
-    tipo_ejercicio: str = Field(..., description="Fuerza, Correr, Natación, Ciclismo, etc.")
+    tipo_ejercicio: Optional[str] = Field(..., description="Fuerza, Correr, Natación, Ciclismo, etc.")
     ejercicios: List[ExerciseDetailItem] = Field(default_factory=list)
 
 

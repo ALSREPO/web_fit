@@ -78,6 +78,36 @@ INITIAL_EXERCISES_DATA = [
     ("Press banca", "Fuerza", "Pectoral mayor", "Principal"),
     ("Press banca", "Fuerza", "Tríceps", "Asistencial"),
     ("Press banca", "Fuerza", "Deltoides anterior", "Asistencial"),
+
+    # Elevaciones De Cadera (Fuerza)
+    ("Elevaciones De Cadera", "Fuerza", "Glúteos", "Principal"),
+    ("Elevaciones De Cadera", "Fuerza", "Isquiotibiales", "Asistencial"),
+    ("Elevaciones De Cadera", "Fuerza", "Erectores espinales", "Asistencial"),
+
+    # Paseo Granjero (Fuerza)
+    ("Paseo Granjero", "Fuerza", "Antebrazos", "Principal"),
+    ("Paseo Granjero", "Fuerza", "Trapecio", "Principal"),
+    ("Paseo Granjero", "Fuerza", "Core", "Principal"),
+    ("Paseo Granjero", "Fuerza", "Glúteos", "Asistencial"),
+    ("Paseo Granjero", "Fuerza", "Gemelos", "Asistencial"),
+
+    # Remo con Barra (Fuerza)
+    ("Remo con Barra", "Fuerza", "Dorsal ancho", "Principal"),
+    ("Remo con Barra", "Fuerza", "Romboide", "Principal"),
+    ("Remo con Barra", "Fuerza", "Trapecio", "Principal"),
+    ("Remo con Barra", "Fuerza", "Bíceps", "Asistencial"),
+    ("Remo con Barra", "Fuerza", "Erectores espinales", "Asistencial"),
+
+    # Sombra BJJ (Fuerza / BJJ)
+    ("Sombra BJJ", "Fuerza", "Core", "Principal"),
+    ("Sombra BJJ", "Fuerza", "Glúteos", "Asistencial"),
+    ("Sombra BJJ", "Fuerza", "Isquiotibiales", "Asistencial"),
+    ("Sombra BJJ", "Fuerza", "Cuádriceps", "Principal"),
+
+    # Vuelos Laterales (Fuerza)
+    ("Vuelos Laterales", "Fuerza", "Deltoides lateral", "Principal"),
+    ("Vuelos Laterales", "Fuerza", "Trapecio", "Asistencial"),
+    ("Vuelos Laterales", "Fuerza", "Deltoides anterior", "Asistencial"),
 ]
 
 def get_db():
@@ -146,6 +176,8 @@ def init_db(conn: duckdb.DuckDBPyConnection):
             ("deltoides (hombros)", "shoulders-front,shoulders-back"),
             ("deltoides", "shoulders-front,shoulders-back"),
             ("deltoides anterior", "shoulders-front"),
+            ("deltoides posterior", "shoulders-back"),
+            ("deltoides lateral", "shoulders-front,shoulders-back"),
             ("glúteos", "glutes"),
             ("cuádriceps", "quads"),
             ("isquiotibiales", "hamstrings"),
@@ -157,6 +189,7 @@ def init_db(conn: duckdb.DuckDBPyConnection):
             ("tríceps", "triceps"),
             ("bíceps", "biceps"),
             ("braquial", "biceps"),
+            ("antebrazos", "antebrazos"),
             ("trapecio", "traps-front,traps-back"),
             ("redondo mayor", "teres"),
             ("romboide", "rhomboids"),
@@ -189,7 +222,7 @@ def create_views(conn: duckdb.DuckDBPyConnection):
             W.time_spent, 
             EXTRACT(epoch FROM W.time_spent::INTERVAL)  as tiempo_segundos,
             round((W.distance / 1000) / (EXTRACT(epoch FROM W.time_spent::INTERVAL) /3600), 2) AS velocidad_km_hora,
-            round((EXTRACT(epoch FROM W.time_spent::INTERVAL) / 60) / (W.distance / 1000), 2) AS ritmo_min_km,
+            COALESCE(ROUND((EXTRACT(epoch FROM W.time_spent::INTERVAL) / 60) / (NULLIF(W.distance, 0) / 1000), 2),0) AS ritmo_min_km,
             W.comment
         FROM workout_logs W 
         LEFT JOIN (

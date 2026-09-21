@@ -111,7 +111,7 @@ Sí, y es sumamente sencillo. No necesitas rehacer el código ni aprender Java/K
 
 ## 📋 Cosas que dejo pendientes de arreglar/modificar más adelante
 - [] **Cambiar IP y el Puerto 192.168.1.129:** en frontend/src/lib/services/client.js la IP está a fuego. Hay que cambiarla a un fichero .env
-- [] **Pantalla Inicio:** en Siguiente y Anterior ejercicio no sale nada si hay algún ejercicio nuevo que no esté contemplado. Hay que cambiarlo
+- [x] **Pantalla Inicio:** en Siguiente y Anterior ejercicio no sale nada si hay algún ejercicio nuevo que no esté contemplado. Hay que cambiarlo
 - [x] **Pantalla Inicio:** cambiar el gráfico para que sea similar al de "Pantalla Histórico de Ejercicios"
 - [] **Pantalla Detalle del Día:** el mapa muscular es muy feo. Hay que hacerlo más estético
 - [x] **Pantalla Histórico de Ejercicios:** Se puede incluir la maratón en las estimaciones de Carrera, y los 100m en natación
