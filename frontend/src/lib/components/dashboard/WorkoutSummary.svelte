@@ -108,7 +108,7 @@
     <!-- Header con Selector de Periodo -->
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/60 pb-3">
         <h2 class="text-base font-bold text-slate-200">Resumen</h2>
-        <div class="grid grid-cols-4 gap-1 rounded-xl bg-slate-900/80 p-1 border border-slate-700/40 min-w-[280px]">
+        <div class="grid w-full flex-1 grid-cols-4 gap-1 rounded-xl border border-slate-700/40 bg-slate-900/80 p-1 min-w-[280px] sm:w-auto sm:flex-none">
             {#each periods as p}
                 <button
                     type="button"
