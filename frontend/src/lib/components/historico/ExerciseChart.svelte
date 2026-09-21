@@ -87,7 +87,7 @@
         if (!validLinePoints.length) return 0;
         const vals = validLinePoints.map(d => d[selectedMetric] || 0);
         const min = Math.min(...vals);
-        return min * 0.95; // Margen sutil inferior
+        return min * 0.95;
     });
 
     function handlePointClick(event: MouseEvent, index: number) {
@@ -121,7 +121,6 @@
 
         return validLinePoints.map((item, i) => {
             const val = item[selectedMetric] || 0;
-            // Posición X calculada según el índice original dentro del rango total
             const x = (item.originalIndex / (totalItems - 1)) * 100;
             const y = 100 - (((val - minVal) / range) * 80 + 10);
             return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
@@ -132,31 +131,31 @@
 <svelte:window onclick={handleWindowClick} />
 
 <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md space-y-4">
-    <!-- Header con Selectores -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-700/60 pb-3">
-        <!-- Selector Rango Temporal -->
-        <div class="flex gap-1 rounded-xl bg-slate-900/80 p-1 border border-slate-700/40">
+    <!-- Header con Selectores en 2 Filas Completas -->
+    <div class="flex flex-col gap-3 border-b border-slate-700/60 pb-3">
+        <!-- Fila 1: Selector Rango Temporal (Ancho Completo) -->
+        <div class="grid grid-cols-4 gap-1 rounded-xl bg-slate-900/80 p-1 border border-slate-700/40 w-full">
             {#each timeframes as t}
                 <button
                     type="button"
                     onclick={() => timeframe = t.id}
-                    class="rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all {timeframe === t.id ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}"
+                    class="rounded-lg py-1.5 text-center text-xs font-semibold transition-all w-full {timeframe === t.id ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}"
                 >
                     {t.label}
                 </button>
             {/each}
         </div>
 
-        <!-- Selector Métrica -->
-        <div class="flex flex-wrap gap-2 text-xs font-medium">
+        <!-- Fila 2: Selector Métrica (Ancho Completo / Distribuido) -->
+        <div class="flex w-full items-center justify-around gap-2 rounded-xl bg-slate-900/40 px-2 py-1.5 border border-slate-700/30 text-xs font-medium">
             {#each currentMetrics as m}
                 <button
                     type="button"
                     onclick={() => { selectedMetric = m.id; activePointIndex = null; }}
-                    class="transition-colors flex items-center gap-1 {selectedMetric === m.id ? 'text-blue-400 underline underline-offset-4 font-bold' : 'text-slate-400 hover:text-slate-200'}"
+                    class="transition-colors flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-center flex-1 {selectedMetric === m.id ? 'text-blue-400 bg-blue-500/10 font-bold border border-blue-500/30' : 'text-slate-400 hover:text-slate-200'}"
                 >
                     <span class="text-[10px]">{m.chartType === 'line' ? '📈' : '📊'}</span>
-                    {m.label}
+                    <span>{m.label}</span>
                 </button>
             {/each}
         </div>
@@ -170,86 +169,77 @@
             No hay datos para este período.
         </div>
     {:else}
-        <div class="flex gap-2 h-52 items-stretch rounded-xl border border-slate-700/40 bg-slate-900/40 p-3 pt-6">
+        <div class="relative h-52 w-full rounded-xl border border-slate-700/40 bg-slate-900/40 p-3 pt-6 flex items-end">
             
-            <!-- Eje Y (Escala Vertical) -->
-            <div class="flex flex-col justify-between text-[10px] font-mono text-slate-500 pr-1 select-none border-r border-slate-800">
-                <span>{formatVal(maxVal, selectedMetric)}</span>
-                <span>{formatVal((maxVal + minVal) / 2, selectedMetric)}</span>
-                <span>{formatVal(minVal, selectedMetric)}</span>
+            <!-- Líneas de Guía Horizontales de Fondo -->
+            <div class="absolute inset-x-3 inset-y-6 flex flex-col justify-between pointer-events-none opacity-15">
+                <div class="border-b border-slate-400 w-full"></div>
+                <div class="border-b border-slate-400 w-full border-dashed"></div>
+                <div class="border-b border-slate-400 w-full"></div>
             </div>
 
-            <!-- Área del Gráfico -->
-            <div class="relative flex-1 flex items-end">
-                
-                <!-- Líneas de Guía Horizontales -->
-                <div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-15">
-                    <div class="border-b border-slate-400 w-full"></div>
-                    <div class="border-b border-slate-400 w-full border-dashed"></div>
-                    <div class="border-b border-slate-400 w-full"></div>
-                </div>
+            <!-- Área Principal del Gráfico -->
+            <div class="relative w-full h-full">
 
                 {#if currentMetricObj.chartType === 'line'}
                     <!-- RENDERIZADO MODO LÍNEA -->
-                    <div class="relative w-full h-full">
-                        <!-- Trazado de línea más fino (stroke-width 1.5) -->
-                        <svg class="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-                            <path
-                                d={svgLinePath}
-                                fill="none"
-                                stroke="#3b82f6"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="transition-all duration-300"
-                            />
-                        </svg>
+                    <svg class="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <path
+                            d={svgLinePath}
+                            fill="none"
+                            stroke="#3b82f6"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="transition-all duration-300"
+                        />
+                    </svg>
 
-                        <!-- Renderizado de puntos solo para días con datos (> 0) -->
-                        <div class="absolute inset-0">
-                            {#each validLinePoints as item}
-                                {@const val = item[selectedMetric] || 0}
-                                {@const range = maxVal - minVal || 1}
-                                {@const topPercent = 100 - (((val - minVal) / range) * 80 + 10)}
-                                {@const leftPercent = (item.originalIndex / (chartData.length - 1)) * 100}
-                                {@const isSelected = activePointIndex === item.originalIndex}
+                    <!-- Puntos Interactivos -->
+                    <div class="absolute inset-0 pointer-events-none">
+                        {#each validLinePoints as item}
+                            {@const val = item[selectedMetric] || 0}
+                            {@const range = maxVal - minVal || 1}
+                            {@const topPercent = 100 - (((val - minVal) / range) * 80 + 10)}
+                            {@const leftPercent = (item.originalIndex / (chartData.length - 1)) * 100}
+                            {@const isSelected = activePointIndex === item.originalIndex}
 
-                                <button
-                                    type="button"
-                                    onclick={(e) => handlePointClick(e, item.originalIndex)}
-                                    class="group absolute flex flex-col items-center cursor-pointer bg-transparent border-0 p-0 outline-none -translate-x-1/2 -translate-y-1/2 z-10"
-                                    style="left: {leftPercent}%; top: {topPercent}%;"
+                            <button
+                                type="button"
+                                onclick={(e) => handlePointClick(e, item.originalIndex)}
+                                class="group absolute flex flex-col items-center cursor-pointer bg-transparent border-0 p-0 outline-none -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-auto"
+                                style="left: {leftPercent}%; top: {topPercent}%;"
+                            >
+                                <!-- Tooltip con Fecha + Valor -->
+                                <div 
+                                    class="absolute -top-10 rounded bg-slate-950 px-2 py-1 text-[10px] font-mono text-slate-100 shadow-lg border border-slate-700 z-20 whitespace-nowrap pointer-events-none transition-opacity flex flex-col items-center leading-tight {isSelected ? 'block' : 'hidden group-hover:block'}"
                                 >
-                                    <!-- Tooltip -->
-                                    <div 
-                                        class="absolute -top-7 rounded bg-slate-950 px-2 py-0.5 text-[10px] font-mono text-slate-100 shadow-lg border border-slate-700 z-20 whitespace-nowrap pointer-events-none transition-opacity {isSelected ? 'block' : 'hidden group-hover:block'}"
-                                    >
-                                        {formatVal(val, selectedMetric)} {currentMetricObj.unit}
-                                    </div>
+                                    <span class="text-[9px] text-slate-400 font-sans">{item.label}</span>
+                                    <span class="font-bold text-blue-400">{formatVal(val, selectedMetric)} {currentMetricObj.unit}</span>
+                                </div>
 
-                                    <!-- Punto más fino (w-2 h-2 / 8px) -->
-                                    <div class="w-2 h-2 rounded-full bg-blue-500 border border-slate-900 shadow transition-transform group-hover:scale-150 {isSelected ? 'scale-150 bg-emerald-400 ring-2 ring-white' : ''}"></div>
-                                </button>
+                                <!-- Punto interactivo (w-2 h-2) -->
+                                <div class="w-2 h-2 rounded-full bg-blue-500 border border-slate-900 shadow transition-transform group-hover:scale-150 {isSelected ? 'scale-150 bg-emerald-400 ring-2 ring-white' : ''}"></div>
+                            </button>
+                        {/each}
+
+                        <!-- Etiquetas del Eje X -->
+                        <div class="absolute bottom-0 inset-x-0 flex justify-between translate-y-6 pointer-events-none">
+                            {#each chartData as item, index}
+                                {@const showLabel = shouldShowLabel(index, chartData.length, timeframe)}
+                                <span class="text-[9px] font-medium text-slate-400 truncate text-center flex-1">
+                                    {showLabel ? item.label : ''}
+                                </span>
                             {/each}
-
-                            <!-- Etiquetas del Eje X (Días) al pie -->
-                            <div class="absolute bottom-0 inset-x-0 flex justify-between translate-y-6 pointer-events-none">
-                                {#each chartData as item, index}
-                                    {@const showLabel = shouldShowLabel(index, chartData.length, timeframe)}
-                                    <span class="text-[9px] font-medium text-slate-400 truncate text-center flex-1">
-                                        {showLabel ? item.label : ''}
-                                    </span>
-                                {/each}
-                            </div>
                         </div>
                     </div>
 
                 {:else}
-                    <!-- RENDERIZADO MODO BARRAS -->
-                    <div class="relative flex h-full w-full items-end {timeframe === '30d' ? 'gap-1' : 'gap-2'}">
+                    <!-- RENDERIZADO MODO COLUMNAS -->
+                    <div class="relative flex h-full w-full items-end justify-between">
                         {#each chartData as item, index}
                             {@const val = item[selectedMetric] || 0}
-                            {@const heightPercent = Math.max((val / maxVal) * 100, val > 0 ? 8 : 2)}
+                            {@const heightPercent = Math.max((val / maxVal) * 100, val > 0 ? 6 : 2)}
                             {@const isSelected = activePointIndex === index}
                             {@const showLabel = shouldShowLabel(index, chartData.length, timeframe)}
 
@@ -258,21 +248,22 @@
                                 onclick={(e) => handlePointClick(e, index)}
                                 class="group relative flex h-full flex-1 flex-col items-center justify-end cursor-pointer bg-transparent border-0 p-0 outline-none min-w-0"
                             >
-                                <!-- Tooltip -->
+                                <!-- Tooltip con Fecha + Valor -->
                                 <div 
-                                    class="absolute -top-7 rounded bg-slate-950 px-2 py-0.5 text-[10px] font-mono text-slate-100 shadow-lg border border-slate-700 z-20 whitespace-nowrap pointer-events-none transition-opacity {isSelected ? 'block' : 'hidden group-hover:block'}"
+                                    class="absolute -top-10 rounded bg-slate-950 px-2 py-1 text-[10px] font-mono text-slate-100 shadow-lg border border-slate-700 z-20 whitespace-nowrap pointer-events-none transition-opacity flex flex-col items-center leading-tight {isSelected ? 'block' : 'hidden group-hover:block'}"
                                 >
-                                    {formatVal(val, selectedMetric)} {currentMetricObj.unit}
+                                    <span class="text-[9px] text-slate-400 font-sans">{item.label}</span>
+                                    <span class="font-bold text-blue-400">{formatVal(val, selectedMetric)} {currentMetricObj.unit}</span>
                                 </div>
 
-                                <!-- Barra -->
+                                <!-- Columna Fina -->
                                 <div
-                                    class="w-full rounded-t transition-all duration-200 {val > 0 ? 'bg-blue-500 group-hover:bg-blue-400' : 'bg-slate-800/80'}"
+                                    class="w-full max-w-[8px] sm:max-w-[12px] rounded-t-sm transition-all duration-200 {val > 0 ? 'bg-blue-500 group-hover:bg-blue-400' : 'bg-slate-800/60'} {isSelected ? 'brightness-125 ring-1 ring-white' : ''}"
                                     style="height: {heightPercent}%"
                                 ></div>
 
-                                <!-- Etiqueta eje X -->
-                                <span class="mt-2 text-[9px] font-medium text-slate-400 truncate w-full text-center">
+                                <!-- Etiqueta Eje X -->
+                                <span class="absolute -bottom-6 text-[9px] font-medium text-slate-400 truncate w-full text-center">
                                     {showLabel ? item.label : ''}
                                 </span>
                             </button>
