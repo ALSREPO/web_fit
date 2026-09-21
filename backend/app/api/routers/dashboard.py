@@ -16,7 +16,8 @@ from backend.app.models.dashboard import (
     DayDetailResponse,
     ExerciseMaxWeightResponse,
     ExerciseSessionHistory,
-    ExerciseChartPoint
+    ExerciseChartPoint,
+    AllExercisesOrdered
 )
 
 router = APIRouter(
@@ -72,3 +73,8 @@ async def get_exercise_chart(
     timeframe: str = "30d"  # '7d', '30d', '12m', 'all'
 ):
     return ExerciseService.get_exercise_chart_data(ejercicio, timeframe)
+
+
+@router.get("/all-exercises-ordered", response_model=List[AllExercisesOrdered])
+def get_exercises_list():
+    return ExerciseService.get_all_exercises_ordered()

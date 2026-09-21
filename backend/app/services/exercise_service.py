@@ -246,3 +246,30 @@ class ExerciseService:
             return list(series_dict.values())
         finally:
             conn.close()
+    
+    @staticmethod
+    def get_all_exercises_ordered() -> List[Dict[str, Any]]:
+        conn = get_db()
+        try:
+            # Selecciona todos los ejercicios distintos calculando el volumen reciente (últimos 90 días)
+            query = """
+                SELECT 
+                    ejercicio,
+                    SUM(CASE WHEN fecha >= CURRENT_DATE - INTERVAL 90 DAY THEN ((coalesce(weight,0)+1) * (coalesce(reps,0)+1)) + coalesce(distance,0) ELSE 0 END) AS recent_volume,
+                    MAX(fecha) AS last_performed
+                FROM v_workout
+                WHERE ejercicio IS NOT NULL AND TRIM(ejercicio) != ''
+                GROUP BY ejercicio
+                ORDER BY recent_volume DESC, last_performed DESC, ejercicio ASC
+            """
+            rows = conn.execute(query).fetchall()
+            return [
+                {
+                    "nombre": row[0],
+                    "recent_volume": round(float(row[1] or 0), 1),
+                    "last_performed": str(row[2]) if row[2] else None
+                }
+                for row in rows
+            ]
+        finally:
+            conn.close()

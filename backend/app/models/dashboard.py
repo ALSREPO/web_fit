@@ -146,3 +146,8 @@ class ExerciseChartPoint(BaseModel):
     max_weight: float
     total_reps: int
     total_sessions: int
+
+class AllExercisesOrdered(BaseModel):
+    nombre: str
+    recent_volume: float = 0.0
+    last_performed: date
