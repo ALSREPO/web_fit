@@ -1,17 +1,22 @@
 <!-- frontend/src/lib/components/historico/ExerciseStatsCards.svelte -->
 <script lang="ts">
     interface CardioProjections {
-        best_pace_min_km?: number;
-        dist_1k?: string;
-        dist_5k?: string;
-        dist_10k?: string;
-        dist_21k?: string;
-        dist_42k?: string;
+        pace_label: string;
+        best_pace?: number;
+        target_1_label: string;
+        target_1_time: string;
+        target_2_label: string;
+        target_2_time: string;
+        target_3_label: string;
+        target_3_time: string;
+        target_4_label: string;
+        target_4_time: string;
     }
 
     interface Stats {
         has_recent_data: boolean;
         is_cardio?: boolean;
+        cardio_type?: string;
         // Fuerza
         max_weight?: number;
         reps_at_max?: number;
@@ -39,74 +44,65 @@
         </p>
     </div>
 {:else if stats.is_cardio && stats.cardio_projections}
-    <!-- TARJETAS PARA CARDIO (Estructura simétrica a Fuerza) -->
+    <!-- TARJETAS PARA CARDIO ADAPTADAS POR DISCIPLINA -->
     <div class="space-y-4">
         <!-- Bloque Superior: 2 Cajas -->
         <div class="grid grid-cols-2 gap-3">
             <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 text-center shadow-md">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Mejor Ritmo (3M)</span>
                 <p class="mt-1 font-mono text-xl font-bold text-emerald-400">
-                    {stats.cardio_projections.best_pace_min_km ?? 'N/A'} <span class="text-xs font-normal text-slate-300">min/km</span>
+                    {stats.cardio_projections.best_pace ?? 'N/A'} <span class="text-xs font-normal text-slate-300">{stats.cardio_projections.pace_label}</span>
                 </p>
                 <p class="mt-0.5 text-xs text-slate-400">Ritmo Medio</p>
             </div>
 
             <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 text-center shadow-md">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Estimado 1K</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Estimado {stats.cardio_projections.target_1_label}</span>
                 <p class="mt-1 font-mono text-xl font-bold text-blue-400">
-                    {stats.cardio_projections.dist_1k || 'N/A'}
+                    {stats.cardio_projections.target_1_time}
                 </p>
                 <p class="mt-0.5 text-xs text-slate-400">Fórmula Riegel</p>
             </div>
         </div>
 
-        <!-- Bloque Inferior: Resto de Distancias -->
+        <!-- Bloque Inferior: Resto de Distancias Clave -->
         <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 shadow-md space-y-3">
             <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Estimación por Distancia
+                Estimación por Distancia ({stats.cardio_type === 'swimming' ? 'Natación' : stats.cardio_type === 'cycling' ? 'Ciclismo' : 'Running'})
             </h3>
 
-            <div class="grid grid-cols-4 gap-2">
+            <div class="grid grid-cols-3 gap-2">
                 <div class="flex flex-col items-center justify-center rounded-xl bg-slate-900/80 p-3 border border-slate-700/40 text-center">
-                    <span class="text-xs font-bold text-slate-400 mb-1">
-                        5K
+                    <span class="text-xs font-bold text-slate-400 mb-1 truncate w-full">
+                        {stats.cardio_projections.target_2_label}
                     </span>
                     <p class="font-mono text-sm font-bold text-slate-100">
-                        {stats.cardio_projections.dist_5k || 'N/A'}
+                        {stats.cardio_projections.target_2_time}
                     </p>
                 </div>
 
                 <div class="flex flex-col items-center justify-center rounded-xl bg-slate-900/80 p-3 border border-slate-700/40 text-center">
-                    <span class="text-xs font-bold text-slate-400 mb-1">
-                        10K
+                    <span class="text-xs font-bold text-slate-400 mb-1 truncate w-full">
+                        {stats.cardio_projections.target_3_label}
                     </span>
                     <p class="font-mono text-sm font-bold text-slate-100">
-                        {stats.cardio_projections.dist_10k || 'N/A'}
+                        {stats.cardio_projections.target_3_time}
                     </p>
                 </div>
 
                 <div class="flex flex-col items-center justify-center rounded-xl bg-slate-900/80 p-3 border border-slate-700/40 text-center">
-                    <span class="text-xs font-bold text-slate-400 mb-1">
-                        21K
+                    <span class="text-xs font-bold text-slate-400 mb-1 truncate w-full">
+                        {stats.cardio_projections.target_4_label}
                     </span>
                     <p class="font-mono text-sm font-bold text-slate-100">
-                        {stats.cardio_projections.dist_21k || 'N/A'}
-                    </p>
-                </div>
-
-                <div class="flex flex-col items-center justify-center rounded-xl bg-slate-900/80 p-3 border border-slate-700/40 text-center">
-                    <span class="text-xs font-bold text-slate-400 mb-1">
-                        42K
-                    </span>
-                    <p class="font-mono text-sm font-bold text-slate-100">
-                        {stats.cardio_projections.dist_42k || 'N/A'}
+                        {stats.cardio_projections.target_4_time}
                     </p>
                 </div>
             </div>
         </div>
     </div>
 {:else if stats.max_weight || stats.estimated_1rm}
-    <!-- TARJETAS PARA FUERZA (1RM y Repeticiones) -->
+    <!-- TARJETAS PARA FUERZA -->
     <div class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
             <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 text-center shadow-md">

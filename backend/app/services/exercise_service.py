@@ -18,7 +18,6 @@ class ExerciseService:
 
     @staticmethod
     def _format_seconds(seconds: float) -> str:
-        """Convierte segundos a formato 'Xh Ym' o 'Xm Ys'"""
         seconds = int(round(seconds))
         hours = seconds // 3600
         minutes = (seconds % 3600) // 60
@@ -30,13 +29,8 @@ class ExerciseService:
 
     @staticmethod
     def _calculate_riegel_time(base_dist_m: float, base_time_s: float, target_dist_m: float) -> str:
-        """
-        Calcula la estimación de tiempo usando la fórmula de Riegel:
-        T2 = T1 * (D2 / D1)^1.06
-        """
         if base_dist_m <= 0 or base_time_s <= 0:
             return "N/A"
-        
         t2_seconds = base_time_s * pow(target_dist_m / base_dist_m, 1.06)
         return ExerciseService._format_seconds(t2_seconds)
 
@@ -45,11 +39,17 @@ class ExerciseService:
         conn = get_db()
         try:
             nombre_lower = ejercicio_nombre.lower()
-            is_cardio = any(k in nombre_lower for k in ['correr', 'nataci', 'ciclismo', 'running', 'natacion'])
+            
+            # Identificar disciplina exacta
+            is_swimming = any(k in nombre_lower for k in ['nataci', 'natacion', 'swimming'])
+            is_cycling = any(k in nombre_lower for k in ['ciclismo', 'bici', 'cycling', 'rodillo'])
+            is_running = any(k in nombre_lower for k in ['correr', 'running', 'trot', 'carrera'])
+            is_cardio = is_swimming or is_cycling or is_running
 
             if is_cardio:
-                # --- LÓGICA CARDIO ---
-                # Buscamos la sesión con el mejor ritmo medio en los últimos 3 meses (distancia >= 1000m)
+                cardio_type = 'swimming' if is_swimming else ('cycling' if is_cycling else 'running')
+                
+                # Buscamos la sesión con el mejor ritmo / velocidad en los últimos 3 meses
                 query_cardio = """
                     SELECT 
                         W.distance,
@@ -59,7 +59,7 @@ class ExerciseService:
                     FROM v_workout W
                     WHERE LOWER(W.ejercicio) = LOWER(?)
                       AND W.distance IS NOT NULL
-                      AND W.distance >= 1000
+                      AND W.distance >= 200
                       AND W.tiempo_segundos IS NOT NULL
                       AND W.fecha BETWEEN (CURRENT_DATE - INTERVAL '3 months') AND CURRENT_DATE
                     ORDER BY W.ritmo_min_km ASC
@@ -72,26 +72,70 @@ class ExerciseService:
                         ejercicio=ejercicio_nombre,
                         period_months=3,
                         has_recent_data=False,
-                        is_cardio=True
+                        is_cardio=True,
+                        cardio_type=cardio_type
                     )
 
                 distance_m, time_s, ritmo_min_km, fecha = row
+                best_pace = round(float(ritmo_min_km), 2) if ritmo_min_km else None
 
-                # Calculamos proyecciones con Riegel partiendo de la mejor marca reciente
-                projections = CardioProjections(
-                    best_pace_min_km=round(float(ritmo_min_km), 2) if ritmo_min_km else None,
-                    dist_1k=ExerciseService._calculate_riegel_time(distance_m, time_s, 1000),
-                    dist_5k=ExerciseService._calculate_riegel_time(distance_m, time_s, 5000),
-                    dist_10k=ExerciseService._calculate_riegel_time(distance_m, time_s, 10000),
-                    dist_21k=ExerciseService._calculate_riegel_time(distance_m, time_s, 21097.5),
-                    dist_42k=ExerciseService._calculate_riegel_time(distance_m, time_s, 42195.0)
-                )
+                # Configurar objetivos según el deporte
+                if is_swimming:
+                    # Natación: Distancias clave (400m, 800m, 1500m, 3800m) y ritmo en min/100m
+                    # Convertimos ritmo min/km a min/100m para que sea natural en natación
+                    if best_pace:
+                        best_pace = round(best_pace / 10.0, 2)
+                    pace_label = "min/100m"
+                    
+                    projections = CardioProjections(
+                        pace_label=pace_label,
+                        best_pace=best_pace,
+                        target_1_label="400m",
+                        target_1_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 400),
+                        target_2_label="800m",
+                        target_2_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 800),
+                        target_3_label="1.500m",
+                        target_3_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 1500),
+                        target_4_label="3.800m (Ironman)",
+                        target_4_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 3800)
+                    )
+                elif is_cycling:
+                    # Ciclismo: Distancias clave (10km, 20km, 40km, 90km)
+                    pace_label = "min/km"
+                    projections = CardioProjections(
+                        pace_label=pace_label,
+                        best_pace=best_pace,
+                        target_1_label="10 km",
+                        target_1_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 10000),
+                        target_2_label="20 km",
+                        target_2_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 20000),
+                        target_3_label="40 km (Crono)",
+                        target_3_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 40000),
+                        target_4_label="90 km (Half)",
+                        target_4_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 90000)
+                    )
+                else:
+                    # Running: 1k, 5k, 10k, 21k (las que teníamos)
+                    pace_label = "min/km"
+                    projections = CardioProjections(
+                        pace_label=pace_label,
+                        best_pace=best_pace,
+                        target_1_label="1 km",
+                        target_1_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 1000),
+                        target_2_label="5 km",
+                        target_2_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 5000),
+                        target_3_label="10 km",
+                        target_3_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 10000),
+                        target_4_label="21k (Media)",
+                        target_4_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 21097.5)
+                    )
 
                 return ExerciseMaxWeightResponse(
                     ejercicio=ejercicio_nombre,
                     period_months=3,
                     has_recent_data=True,
                     is_cardio=True,
+                    cardio_type=cardio_type,
                     cardio_projections=projections,
                     last_performed_date=str(fecha)
                 )

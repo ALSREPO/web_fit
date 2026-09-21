@@ -117,19 +117,25 @@ class DayDetailResponse(BaseModel):
 
 
 class CardioProjections(BaseModel):
-    best_pace_min_km: Optional[float] = None
-    dist_1k: Optional[str] = None     # Formato "4m 12s"
-    dist_5k: Optional[str] = None     # Formato "22m 15s"
-    dist_10k: Optional[str] = None    # Formato "46m 30s"
-    dist_21k: Optional[str] = None    # Media Maratón "1h 42m"
-    dist_42k: Optional[str] = None    # Maratón "3h 35m"
-
+    pace_label: str                    # Ej: "min/km" o "min/100m"
+    best_pace: Optional[float] = None  # Valor numérico del mejor ritmo
+    
+    # Etiquetas y valores para las 4 distancias objetivo del deporte
+    target_1_label: str
+    target_1_time: str
+    target_2_label: str
+    target_2_time: str
+    target_3_label: str
+    target_3_time: str
+    target_4_label: str
+    target_4_time: str
 
 class ExerciseMaxWeightResponse(BaseModel):
     ejercicio: str = Field(..., description="Nombre del ejercicio consultado")
     period_months: int = Field(3, description="Ventana de tiempo evaluada en meses")
     has_recent_data: bool = Field(False, description="Indica si hay registros en la ventana de 3 meses")
-    is_cardio: bool = Field(False, description="Distingue entre Correr, Natación y Cilismo de los de Fuerza")
+    is_cardio: bool = Field(False, description="Distingue entre Correr, Natación y Ciclismo de los de Fuerza")
+    cardio_type: Optional[str] = Field(None, description="running, cycling, swimming, o null si es Fuerza")
     
     # Campos de Fuerza
     max_weight: Optional[float] = Field(None, description="Peso máximo registrado en los últimos 3 meses")
@@ -140,7 +146,6 @@ class ExerciseMaxWeightResponse(BaseModel):
     # Campos de Cardio
     cardio_projections: Optional[CardioProjections] = Field(None, description="Estimaciones (Riegel) basado en la mejor serie del periodo")
     last_performed_date: Optional[str] = Field(None, description="Fecha de la última vez que se realizó el ejercicio")
-    #last_performed_date: Optional[date] = Field(None, description="Fecha de la última vez que se realizó el ejercicio")
 
 class ExerciseSetDetail(BaseModel):
     set_number: int
