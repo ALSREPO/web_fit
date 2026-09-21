@@ -25,9 +25,9 @@
             No has realizado este ejercicio en los últimos 3 meses.
         </p>
     </div>
-{:else}
+{:else if stats.max_weight || stats.estimated_1rm}
+    <!-- Tarjetas de Fuerza (Solo se renderizan si hay datos de peso/1RM) -->
     <div class="space-y-4">
-        <!-- Récord Máximo y 1RM Estimado -->
         <div class="grid grid-cols-2 gap-3">
             <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 text-center shadow-md">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Máximo (3M)</span>
@@ -48,7 +48,6 @@
             </div>
         </div>
 
-        <!-- Estimación por Repeticiones -->
         {#if stats.estimated_1rm}
             <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 shadow-md space-y-3">
                 <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">

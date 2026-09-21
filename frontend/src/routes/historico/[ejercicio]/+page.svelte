@@ -41,7 +41,7 @@
         hasMore = true;
 
         Promise.all([
-            dashboardApi.getExerciseMax(currentExercise),
+            dashboardApi.getExerciseMax(currentExercise).catch(() => null),
             dashboardApi.getExerciseHistory(currentExercise, PAGE_SIZE, 0).catch(() => [])
         ])
             .then(([statsRes, historyRes]) => {
@@ -94,6 +94,13 @@
             month: 'short', 
             year: 'numeric' 
         });
+    }
+
+    function formatTime(seconds) {
+        if (!seconds) return '';
+        const m = Math.floor(seconds / 60);
+        const s = Math.round(seconds % 60);
+        return `${m}m ${s < 10 ? '0' : ''}${s}s`;
     }
 </script>
 
@@ -160,6 +167,10 @@
                                     <span class="text-xs text-slate-400 font-mono">
                                         Volumen: {Math.round(session.total_volume_kg).toLocaleString('es-ES')} kg
                                     </span>
+                                {:else if session.total_distance}
+                                    <span class="text-xs text-slate-400 font-mono">
+                                        Distancia total: {session.total_distance.toLocaleString('es-ES')} m
+                                    </span>
                                 {/if}
                             </div>
 
@@ -168,7 +179,21 @@
                                     {#each session.sets as set, index}
                                         <li class="flex items-center justify-between gap-2 text-xs text-slate-300">
                                             <span class="w-6 shrink-0 font-semibold text-slate-500">S{index + 1}</span>
-                                            <span class="flex-1 font-mono">{set.weight} kg × {set.reps}</span>
+                                            
+                                            <span class="flex-1 font-mono">
+                                                {#if set.weight !== null && set.reps !== null}
+                                                    {set.weight} kg × {set.reps}
+                                                {:else if set.distance !== null}
+                                                    {set.distance} {set.distance_unit || 'm'}
+                                                    {#if set.tiempo_segundos}
+                                                        · {formatTime(set.tiempo_segundos)}
+                                                    {/if}
+                                                    {#if set.ritmo_min_km}
+                                                        · <span class="text-blue-400">{set.ritmo_min_km} min/km</span>
+                                                    {/if}
+                                                {/if}
+                                            </span>
+
                                             {#if set.comment}
                                                 <span class="max-w-[40%] truncate text-right text-slate-500">{set.comment}</span>
                                             {/if}

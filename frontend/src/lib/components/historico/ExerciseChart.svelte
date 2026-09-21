@@ -8,22 +8,46 @@
 
     let { ejercicio }: Props = $props();
 
-    type MetricType = 'total_volume' | 'max_estimated_1rm' | 'max_weight' | 'total_reps';
+    type MetricType = 'total_volume' | 'max_estimated_1rm' | 'max_weight' | 'total_reps' | 'total_distance' | 'total_time_seconds' | 'avg_ritmo_min_km';
     type TimeframeType = '7d' | '30d' | '12m' | 'all';
+
+    // Detección de tipo de ejercicio (Cardio vs Fuerza)
+    let isCardio = $derived.by(() => {
+        const name = (ejercicio || '').toLowerCase();
+        return name.includes('correr') || name.includes('nataci') || name.includes('ciclismo') || name.includes('running') || name.includes('natacion');
+    });
 
     let timeframe = $state<TimeframeType>('7d');
     let selectedMetric = $state<MetricType>('total_volume');
-    
+
+    // Cambiar métrica por defecto según el tipo de ejercicio
+    $effect(() => {
+        if (isCardio) {
+            selectedMetric = 'total_distance';
+        } else {
+            selectedMetric = 'total_volume';
+        }
+    });
+
     let loading = $state(true);
     let chartData = $state<any[]>([]);
     let activeBarIndex = $state<number | null>(null);
 
-    const metrics: { id: MetricType; label: string; unit: string }[] = [
+    // Listas de métricas condicionales
+    const fuerzaMetrics: { id: MetricType; label: string; unit: string }[] = [
         { id: 'total_volume', label: 'Volumen', unit: 'kg' },
         { id: 'max_estimated_1rm', label: '1RM Est.', unit: 'kg' },
         { id: 'max_weight', label: 'Carga Máx.', unit: 'kg' },
         { id: 'total_reps', label: 'Reps', unit: 'reps' }
     ];
+
+    const cardioMetrics: { id: MetricType; label: string; unit: string }[] = [
+        { id: 'total_distance', label: 'Distancia', unit: 'm' },
+        { id: 'avg_ritmo_min_km', label: 'Ritmo Medio', unit: 'min/km' },
+        { id: 'total_time_seconds', label: 'Tiempo Total', unit: 's' }
+    ];
+
+    let currentMetrics = $derived(isCardio ? cardioMetrics : fuerzaMetrics);
 
     const timeframes: { id: TimeframeType; label: string }[] = [
         { id: '7d', label: 'Semana' },
@@ -42,7 +66,7 @@
             .finally(() => { loading = false; });
     });
 
-    let currentMetricObj = $derived(metrics.find(m => m.id === selectedMetric)!);
+    let currentMetricObj = $derived(currentMetrics.find(m => m.id === selectedMetric) || currentMetrics[0]);
 
     let maxVal = $derived.by(() => {
         if (!chartData.length) return 1;
@@ -59,11 +83,18 @@
         activeBarIndex = null;
     }
 
-    // Determina si se debe renderizar la etiqueta del eje X para no saturar 30d
     function shouldShowLabel(index: number, total: number, tf: TimeframeType): boolean {
         if (tf !== '30d') return true;
-        // En vista de 30 días, mostrar cada 5 días y la última barra
         return index % 5 === 0 || index === total - 1;
+    }
+
+    function formatVal(value: number, metricId: MetricType): string {
+        if (metricId === 'total_time_seconds') {
+            const mins = Math.floor(value / 60);
+            const secs = Math.round(value % 60);
+            return `${mins}m ${secs}s`;
+        }
+        return value.toLocaleString('es-ES');
     }
 </script>
 
@@ -85,9 +116,9 @@
             {/each}
         </div>
 
-        <!-- Selector Métrica -->
+        <!-- Selector Métrica (Fuerza o Cardio) -->
         <div class="flex flex-wrap gap-2 text-xs font-medium">
-            {#each metrics as m}
+            {#each currentMetrics as m}
                 <button
                     type="button"
                     onclick={() => { selectedMetric = m.id; activeBarIndex = null; }}
@@ -125,7 +156,7 @@
                     <div 
                         class="absolute -top-7 rounded bg-slate-950 px-2 py-0.5 text-[10px] font-mono text-slate-100 shadow-lg border border-slate-700 z-20 whitespace-nowrap pointer-events-none transition-opacity {isSelected ? 'block' : 'hidden group-hover:block'}"
                     >
-                        {val.toLocaleString('es-ES')} {currentMetricObj.unit}
+                        {formatVal(val, selectedMetric)} {currentMetricObj.unit}
                     </div>
 
                     <!-- Barra -->
