@@ -11,6 +11,8 @@
         target_3_time: string;
         target_4_label: string;
         target_4_time: string;
+        target_5_label: string;
+        target_5_time: string;
     }
 
     interface Stats {
@@ -71,7 +73,7 @@
                 Estimación por Distancia ({stats.cardio_type === 'swimming' ? 'Natación' : stats.cardio_type === 'cycling' ? 'Ciclismo' : 'Running'})
             </h3>
 
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-2 gap-2">
                 <div class="flex flex-col items-center justify-center rounded-xl bg-slate-900/80 p-3 border border-slate-700/40 text-center">
                     <span class="text-xs font-bold text-slate-400 mb-1 truncate w-full">
                         {stats.cardio_projections.target_2_label}
@@ -96,6 +98,15 @@
                     </span>
                     <p class="font-mono text-sm font-bold text-slate-100">
                         {stats.cardio_projections.target_4_time}
+                    </p>
+                </div>
+
+                <div class="flex flex-col items-center justify-center rounded-xl bg-slate-900/80 p-3 border border-slate-700/40 text-center">
+                    <span class="text-xs font-bold text-slate-400 mb-1 truncate w-full">
+                        {stats.cardio_projections.target_5_label}
+                    </span>
+                    <p class="font-mono text-sm font-bold text-slate-100">
+                        {stats.cardio_projections.target_5_time}
                     </p>
                 </div>
             </div>

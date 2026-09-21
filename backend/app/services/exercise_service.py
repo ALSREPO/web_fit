@@ -90,14 +90,16 @@ class ExerciseService:
                     projections = CardioProjections(
                         pace_label=pace_label,
                         best_pace=best_pace,
-                        target_1_label="400m",
-                        target_1_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 400),
-                        target_2_label="800m",
-                        target_2_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 800),
-                        target_3_label="1.500m",
-                        target_3_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 1500),
-                        target_4_label="3.800m (Ironman)",
-                        target_4_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 3800)
+                        target_1_label="100m",
+                        target_1_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 100),
+                        target_2_label="400m",
+                        target_2_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 400),
+                        target_3_label="800m",
+                        target_3_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 800),
+                        target_4_label="1.500m",
+                        target_4_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 1500),
+                        target_5_label="3.800m (Ironman)",
+                        target_5_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 3800)
                     )
                 elif is_cycling:
                     # Ciclismo: Distancias clave (10km, 20km, 40km, 90km)
@@ -112,7 +114,9 @@ class ExerciseService:
                         target_3_label="40 km (Crono)",
                         target_3_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 40000),
                         target_4_label="90 km (Half)",
-                        target_4_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 90000)
+                        target_4_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 90000),
+                        target_5_label="180 K (Ironman)",
+                        target_5_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 180000)
                     )
                 else:
                     # Running: 1k, 5k, 10k, 21k (las que teníamos)
@@ -126,8 +130,10 @@ class ExerciseService:
                         target_2_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 5000),
                         target_3_label="10 km",
                         target_3_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 10000),
-                        target_4_label="21k (Media)",
-                        target_4_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 21097.5)
+                        target_4_label="21.1 k (Media)",
+                        target_4_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 21097.5),
+                        target_5_label="42.2 k (Maratón)",
+                        target_5_time=ExerciseService._calculate_riegel_time(distance_m, time_s, 42195.0)
                     )
 
                 return ExerciseMaxWeightResponse(

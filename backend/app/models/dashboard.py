@@ -129,6 +129,8 @@ class CardioProjections(BaseModel):
     target_3_time: str
     target_4_label: str
     target_4_time: str
+    target_5_label: str
+    target_5_time: str
 
 class ExerciseMaxWeightResponse(BaseModel):
     ejercicio: str = Field(..., description="Nombre del ejercicio consultado")
