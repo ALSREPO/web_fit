@@ -1,5 +1,6 @@
 # Datos sensibles
 .env
+.env.*
 
 # Basura de Python
 __pycache__/
@@ -22,3 +23,7 @@ Thumbs.db
 # Ficheros datos
 *data/uploads/*.csv
 *data/*.duckdb
+
+*data/data_develop/*
+*data/data_staging/*
+*data/data_main/*

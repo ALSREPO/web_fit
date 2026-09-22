@@ -1,8 +1,8 @@
 // frontend/src/lib/services/client.js
-// Ajusta la IP según la dirección de tu servidor backend en la red local
-// Nota: Si estás usando Docker, asegúrate de que el contenedor del backend esté accesible desde el contenedor del frontend o desde tu máquina host.
 
-const BASE_URL = 'http://192.168.1.129:8895/api/v1';
+// Si existe la variable de entorno VITE_API_URL (en dev), la usa.
+// Si no existe (en staging/prod compilado), usa la ruta relativa '/api/v1' que sirve FastAPI directamente.
+const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export async function request(endpoint, options = {}) {
   try {
