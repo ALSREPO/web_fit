@@ -6,9 +6,6 @@
 
   /** @type {{ children?: import('svelte').Snippet }} */
   let { children } = $props();
-  
-  export const prerender = false;
-  export const ssr = false;
 
 </script>
 
