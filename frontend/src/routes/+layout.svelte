@@ -6,6 +6,10 @@
 
   /** @type {{ children?: import('svelte').Snippet }} */
   let { children } = $props();
+  
+  export const prerender = false;
+  export const ssr = false;
+
 </script>
 
 <div class="min-h-screen pb-20 bg-slate-900 text-slate-100 flex flex-col">
