@@ -7,8 +7,8 @@ export default defineConfig(({ mode }) => {
 	const env = { ...process.env, ...loadEnv(mode, process.cwd(), '') };
 
 	// Si DOMAIN_SUFFIX está definido en Compose (ej: '_pre'), lo usa. Si no, usa '_na'.
-	const suffix = env.DOMAIN_SUFFIX !== undefined ? env.DOMAIN_SUFFIX : '_na';
-	const nombre_url = env.NOMBRE_URL !== undefined ? env.NOMBRE_URL : 'diariodehierro';
+	const hasSuffix = env.DOMAIN_SUFFIX !== undefined && env.DOMAIN_SUFFIX.trim() !== '';
+	const suffix = hasSuffix ? env.DOMAIN_SUFFIX : '';	const nombre_url = env.NOMBRE_URL !== undefined ? env.NOMBRE_URL : 'diariodehierro';
 	const nombre_dominio = env.NOMBRE_DOMINIO !== undefined ? env.NOMBRE_DOMINIO : 'alsdev.com';
 	const allowedDomain = `${nombre_url}${suffix}.${nombre_dominio}`;
 
