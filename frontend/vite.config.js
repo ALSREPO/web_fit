@@ -3,12 +3,21 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv } from 'vite';
 
 export default defineConfig(({ mode }) => {
-	// Carga las variables de entorno inyectadas por Docker Compose / Portainer
-	const env = loadEnv(mode, process.cwd(), '');
+	// Carga variables del archivo .env y también del process.env de la máquina/Docker
+	const env = { ...process.env, ...loadEnv(mode, process.cwd(), '') };
 
-	// Construye el subdominio dinámicamente según DOMAIN_SUFFIX (_dev, _pre, o vacío)
-	const suffix = env.DOMAIN_SUFFIX !== undefined ? env.DOMAIN_SUFFIX : '_dev';
-	const allowedDomain = `diariodehierro${suffix}.alsdev.com`;
+	// Si DOMAIN_SUFFIX está definido en Compose (ej: '_pre'), lo usa. Si no, usa '_na'.
+	const suffix = env.DOMAIN_SUFFIX !== undefined ? env.DOMAIN_SUFFIX : '_na';
+	const nombre_url = env.NOMBRE_URL !== undefined ? env.NOMBRE_URL : 'diariodehierro';
+	const nombre_dominio = env.NOMBRE_DOMINIO !== undefined ? env.NOMBRE_DOMINIO : 'alsdev.com';
+	const allowedDomain = `${nombre_url}${suffix}.${nombre_dominio}`;
+
+	// LOGS PARA DEPURACIÓN 
+	console.log('--------------------------------------------------');
+	console.log(`[Vite Config] Mode: ${mode}`);
+	console.log(`[Vite Config] DOMAIN_SUFFIX detectado: "${env.DOMAIN_SUFFIX}"`);
+	console.log(`[Vite Config] Domain resuelto para allowedHosts: "${allowedDomain}"`);
+	console.log('--------------------------------------------------');
 
 	return {
 		plugins: [
