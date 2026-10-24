@@ -54,6 +54,12 @@ async def home(request: Request):
   # O renderizar tu plantilla de Jinja2 cuando la tengas lista:
   return templates.TemplateResponse(request, "index.html", context={"request": request})
 
+
+@app.get("/calendario", response_class=HTMLResponse)
+async def calendario_view(request: Request):
+    return templates.TemplateResponse(request, "calendario.html", context={"request": request})
+
+
 # Si entra en una ruta no definida, redirige a la raíz
 @app.exception_handler(status.HTTP_404_NOT_FOUND)
 async def custom_404_handler(request: Request, __):
