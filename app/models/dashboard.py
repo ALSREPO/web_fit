@@ -1,4 +1,4 @@
-# backend/app/models/dashboard.py
+# app/models/dashboard.py
 # Definición de modelos Pydantic para la respuesta de los endpoints del Dashboard
 
 from pydantic import BaseModel, Field

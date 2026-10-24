@@ -1,8 +1,10 @@
+# app/services/exercise_service.py
+from duckdb import connect
 from typing import List, Optional, Dict, Any
 from datetime import date, timedelta
 from math import pow
-from backend.app.database import get_db
-from backend.app.models.dashboard import (
+from app.database import DB_PATH
+from app.models.dashboard import (
     CardioProjections,
     ExerciseMaxWeightResponse,
     ExerciseSessionHistory,
@@ -36,7 +38,7 @@ class ExerciseService:
 
     @staticmethod
     def get_exercise_max_weight(ejercicio_nombre: str) -> ExerciseMaxWeightResponse:
-        conn = get_db()
+        conn = connect(str(DB_PATH), read_only=True)
         try:
             nombre_lower = ejercicio_nombre.lower()
             
@@ -198,7 +200,7 @@ class ExerciseService:
         """
         Obtiene el historial cronológico inverso paginado (Soporta fuerza y cardio).
         """
-        conn = get_db()
+        conn = connect(str(DB_PATH), read_only=True)
         try:
             query = """
                 WITH target_dates AS (
@@ -286,7 +288,7 @@ class ExerciseService:
 
     @staticmethod
     def get_exercise_chart_data(ejercicio_nombre: str, timeframe: str) -> List[Dict[str, Any]]:
-        conn = get_db()
+        conn = connect(str(DB_PATH), read_only=True)
         try:
             today = date.today()
             series_dict = {}
@@ -403,7 +405,7 @@ class ExerciseService:
     
     @staticmethod
     def get_all_exercises_ordered() -> List[Dict[str, Any]]:
-        conn = get_db()
+        conn = connect(str(DB_PATH), read_only=True)
         try:
             query = """
                 SELECT 

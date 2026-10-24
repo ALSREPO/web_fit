@@ -1,9 +1,10 @@
-# backend/app/services/day_detail_service.py
+# app/services/day_detail_service.py
 # Servicio especializado para el Detalle del Día
 # Módulo para obtener el desglose completo de una sesión de entrenamiento
 
+from duckdb import connect
 from datetime import date
-from backend.app.database import get_db
+from app.database import DB_PATH
 
 
 class DayDetailService:
@@ -78,7 +79,7 @@ class DayDetailService:
     @staticmethod
     def get_day_detail(target_date: date):
         """Obtiene el desglose completo de entrenamientos y músculos de un día."""
-        conn = get_db()
+        conn = connect(str(DB_PATH), read_only=True)
         try:
             # 1. Obtener KPIs globales del día
             kpi_row = conn.execute("""

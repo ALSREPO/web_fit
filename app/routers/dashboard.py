@@ -1,15 +1,15 @@
-# backend/app/api/routers/dashboard.py
+# app/routers/dashboard.py
 # Router FastAPI para endpoints del Dashboard
 # Exposición de métricas, resúmenes y sugerencias de entrenamiento en formato JSON para el frontend.
 
 from fastapi import APIRouter, Query
 from datetime import date
 from typing import List
-from backend.app.services.dashboard_service import DashboardService
-from backend.app.services.calendar_service import CalendarService
-from backend.app.services.day_detail_service import DayDetailService
-from backend.app.services.exercise_service import ExerciseService
-from backend.app.models.dashboard import (
+from app.services.dashboard_service import DashboardService
+from app.services.calendar_service import CalendarService
+from app.services.day_detail_service import DayDetailService
+from app.services.exercise_service import ExerciseService
+from app.models.dashboard import (
     WorkoutCardResponse,
     MetricsSummaryResponse,
     CompactCalendarResponse,

@@ -1,11 +1,11 @@
-# backend/app/services/calendar_service.py
+# app/services/calendar_service.py
 # Servicio especializado para consultas de Calendario
 # Módulo para obtener el estado de días del calendario mensual
 
+from duckdb import connect
 from datetime import date
 from calendar import monthrange
-from backend.app.database import get_db
-
+from app.database import DB_PATH
 
 class CalendarService:
     """Servicio encargado de la lógica del calendario compacto."""
@@ -16,7 +16,7 @@ class CalendarService:
         Obtiene el estado de cada día del mes especificado.
         Retorna los días con entrenamientos y sus tipos/disciplinas.
         """
-        conn = get_db()
+        conn = connect(str(DB_PATH), read_only=True)
         try:
             # Validar rango del mes
             if month < 1 or month > 12:

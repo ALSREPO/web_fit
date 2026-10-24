@@ -2,36 +2,38 @@
 # Conexión a DuckDB
 # Módulo optimizado para la gestión de la base de datos DuckDB
 
-import duckdb
+from duckdb import connect
 import json
 from pathlib import Path
 from contextlib import contextmanager
-from config import DATA_DIR
+from app.config import DATA_DIR
 
 DB_PATH = DATA_DIR / "fitnotes.duckdb"
 
-def get_db(solo_lectura: bool = True):
-  """Fábrica de dependencias para FastAPI.
-  Permite alternar entre modo lectura o lectura/escritura.
-  """
-  def _dependency():
-    # Asegura que la carpeta data existe si vamos a escribir
-    if not solo_lectura:
-      DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-    conn = duckdb.connect(str(DB_PATH), read_only=solo_lectura)
+def get_write_db():
+    """Generador de conexiones optimizado para FastAPI (Inyección con Depends).
+    """
+    conn = connect(str(DB_PATH), read_only=False)
     try:
-      yield conn
+        yield conn
     finally:
-      conn.close()
+        conn.close()
 
-  return _dependency
+def get_read_db():
+    """Generador de conexiones optimizado para FastAPI (Inyección con Depends).
+    Se abre en modo lectura por defecto para máxima velocidad y seguridad.
+    """
+    conn = connect(str(DB_PATH), read_only=True)
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
-def init_db(conn: duckdb.DuckDBPyConnection):
+def init_db():
     """Inicializa la secuencia y la tabla 'workout_logs' si no existen."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = duckdb.connect(str(DB_PATH))
+    conn = connect(str(DB_PATH))
 
     try:
         # 1. Creamos la secuencia para los IDs auto-incrementales
@@ -194,9 +196,6 @@ def init_db(conn: duckdb.DuckDBPyConnection):
         """)
     finally:
         conn.close()
-
-conn = get_db(solo_lectura=False)
-init_db(conn)
 
 """
 

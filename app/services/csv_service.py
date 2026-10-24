@@ -2,11 +2,11 @@
 # Servicio de Carga y Parseo CSV
 # Módulo para el manejo de archivos CSV y su almacenamiento en DuckDB
 
-import duckdb
+from duckdb import connect
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from backend.app.database import get_db
+from app.database import DB_PATH
 
 class CSVService:
     @staticmethod
@@ -15,7 +15,8 @@ class CSVService:
         if not file_path.exists():
             raise FileNotFoundError(f"No se encontró el archivo: {file_path}")
 
-        conn = get_db()
+        # Obtenemos la conexión del generador de escritura de forma segura
+        conn = connect(str(DB_PATH), read_only=False)
         try:
             # Reemplazar tabla de logs con los datos nuevos del CSV parseado
             conn.execute("TRUNCATE TABLE workout_logs")
@@ -52,7 +53,8 @@ class CSVService:
     @staticmethod
     def get_all_records(limit: int = 100):
         """Consulta los registros de la base de datos DuckDB."""
-        conn = get_db()
+        # Obtenemos la conexión del generador de lectura de forma segura
+        conn = connect(str(DB_PATH), read_only=True)
         try:
             df = conn.execute("""
                 SELECT 

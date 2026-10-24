@@ -1,10 +1,11 @@
-# backend/app/services/dashboard_service.py
+# app/services/dashboard_service.py
 # Servicio del Dashboard Principal
 # Módulo para obtener próximo entrenamiento, último entrenamiento y resumen de métricas
 
+from duckdb import connect
 from datetime import date, timedelta
 from typing import Dict, Any, List
-from backend.app.database import get_db
+from app.database import DB_PATH
 
 class DashboardService:
 
@@ -24,7 +25,7 @@ class DashboardService:
         - is_past=True: Obtiene la fecha más reciente anterior a HOY (Último)
         - is_past=False: Obtiene la fecha más cercana mayor o igual a HOY (Siguiente)
         """
-        conn = get_db()
+        conn = connect(str(DB_PATH), read_only=True)
         try:
             today = date.today()
             
@@ -108,7 +109,7 @@ class DashboardService:
 
     @staticmethod
     def get_summary(period: str = "week") -> Dict[str, Any]:
-        conn = get_db()
+        conn = connect(str(DB_PATH), read_only=True)
         try:
             today = date.today()
             timeframe_list = []

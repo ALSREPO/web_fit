@@ -14,6 +14,8 @@ ENTORNO = os.getenv("ENTORNO", "DEVELOP").upper()
 
 # Construir dinámicamente la carpeta de datos (ej: data_DEVELOP, data_PRO...)
 DATA_DIR = ROOT_DIR / "data" / f"data_{ENTORNO}"
+UPLOAD_DIR = ROOT_DIR / "data" / "uploads" # común a todos los entornos
 
 # Asegurar que la carpeta de datos del entorno actual exista físicamente
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)

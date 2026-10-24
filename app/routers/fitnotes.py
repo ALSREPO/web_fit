@@ -1,15 +1,13 @@
-# backend/app/api/routers/fitnotes.py
+# app/routers/fitnotes.py
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from pathlib import Path
 import shutil
 from typing import Optional
 
-from backend.app.services.csv_service import CSVService
-from backend.app.models.fitnotes import CSVUploadResponse
+from app.services.csv_service import CSVService
+from app.models.fitnotes import CSVUploadResponse
 
-# Directorio de subidas relativo a la raíz del backend
-UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data" / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+from app.config import UPLOAD_DIR
 
 router = APIRouter(
     prefix="/api/v1/fitnotes",

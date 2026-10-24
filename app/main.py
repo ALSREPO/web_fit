@@ -1,52 +1,65 @@
-# backend/app/main.py
-import os
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+# app/main.py
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request, status
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.templating import Jinja2Templates
 
+from app.database import init_db
+from app.routers import fitnotes, dashboard
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Inicializa tablas, vistas y datos desde el JSON al arrancar
+    init_db()
+    yield
+
+
+###########################################################
+# Inicializamos la aplicación FastAPI
 app = FastAPI(
-    title="Diario De Hierro API",
-    version="0.6.0",
-    description="Análisis de entrenamientos"
+    title="Diario De Hierro",
+    version="0.7.0",
+    description="Análisis de entrenamientos",
+    lifespan=lifespan
 )
 
-# Configuración CORS (necesaria para dev)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-#########################################################
-# 1. Routers de la API (Tienen prioridad)
-from backend.app.api.routers import fitnotes, dashboard
+###########################################################
+# Configuramos el manejo de archivos estáticos (CSS, JS y vídeos)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-app.include_router(fitnotes.router) 
+
+###########################################################
+# Cargamos los routers
+app.include_router(fitnotes.router)
 app.include_router(dashboard.router)
+
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok", "message": "Diario De Hierro API activa"}
+    return {"status": "ok", "message": "Diario De Hierro activo"}
 
 
-#########################################################
-# 2. Servir el Frontend compilado
-frontend_build_dir = "/app/frontend/build"
-print("¿Entrará?")
-if os.path.exists(frontend_build_dir):
-    print("Entra")
-    # Sirve los recursos estáticos generados por SvelteKit
-    app.mount("/_app", StaticFiles(directory=f"{frontend_build_dir}/_app"), name="static_app")
-    
-    # Manejador Single Page Application (SPA) para cualquier ruta que no sea de la API
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        # Si la petición apunta a un archivo estático existente (favicons, manifest, etc.), lo entrega
-        possible_file = os.path.join(frontend_build_dir, full_path)
-        if full_path != "" and os.path.exists(possible_file):
-            return FileResponse(possible_file)
-        # Para el resto de rutas navegables de SvelteKit, devuelve el index.html
-        return FileResponse(f"{frontend_build_dir}/index.html")
+# Configurar el directorio de plantillas Jinja2
+templates = Jinja2Templates(directory="app/templates")
+
+
+# Ruta raíz para evitar el bucle 404
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+  # Si aún no tienes el index.html creado, puedes devolver un texto plano temporalmente:
+  # return "<h1>Diario de Hierro - Backend Activo</h1>"
+
+  # O renderizar tu plantilla de Jinja2 cuando la tengas lista:
+  return templates.TemplateResponse("index.html", {"request": request})
+
+# Si entra en una ruta no definida, redirige a la raíz
+@app.exception_handler(status.HTTP_404_NOT_FOUND)
+async def custom_404_handler(request: Request, __):
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+if __name__ == "__main__":
+    import uvicorn
+    # Cambiado a 0.0.0.0 para que escuche fuera del contenedor si lo corres directo
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8888, reload=True)
