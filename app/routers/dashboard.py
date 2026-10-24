@@ -2,10 +2,12 @@
 # Router FastAPI para endpoints del Dashboard
 # Exposición de métricas, resúmenes y sugerencias de entrenamiento en formato JSON para el frontend.
 
-from fastapi import APIRouter, Query
+import duckdb
+from fastapi import APIRouter, Query, Depends
 from fastapi.responses import HTMLResponse
 from datetime import date
 from typing import List
+from app.database import get_read_db
 from app.services.dashboard_service import DashboardService
 from app.services.calendar_service import CalendarService
 from app.services.day_detail_service import DayDetailService
@@ -194,13 +196,16 @@ async def fragment_summary_kpis(period: str = Query("month", pattern="^(week|mon
 @router.get("/fragment/calendar", response_class=HTMLResponse)
 async def fragment_calendar(
     year: int = Query(default_factory=lambda: date.today().year),
-    month: int = Query(default_factory=lambda: date.today().month, ge=1, le=12)
+    month: int = Query(default_factory=lambda: date.today().month, ge=1, le=12),
+    filter: str = Query(None)
 ):
-    # Usamos directamente tu servicio existente
     cal_data = CalendarService.get_compact_calendar(year, month)
     
     first_day = date(year, month, 1)
-    start_day = first_day.weekday() # Lunes = 0, Domingo = 6
+    start_day = first_day.weekday()
+    today_str = date.today().strftime('%Y-%m-%d')
+    current_year = date.today().year
+    current_month = date.today().month
     
     months_esp = [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -214,18 +219,27 @@ async def fragment_calendar(
     next_month = month + 1 if month < 12 else 1
     next_year = year if month < 12 else year + 1
 
+    min_year = 2018
+    years_range = range(min_year, current_year + 2)
+
+    disciplines = [
+        {"key": "fuerza", "label": "Fuerza", "color": "bg-red-500", "match": ['fuerza', 'strength', 'pesa']},
+        {"key": "carrera", "label": "Carrera", "color": "bg-emerald-500", "match": ['carrera', 'run', 'correr']},
+        {"key": "ciclismo", "label": "Ciclismo", "color": "bg-orange-500", "match": ['cicl', 'bici', 'bike']},
+        {"key": "natacion", "label": "Natación", "color": "bg-blue-500", "match": ['nataci', 'swim', 'agua']},
+    ]
+
     def get_dot_color(type_str):
         if not type_str: return 'bg-yellow-500'
         lower = type_str.lower()
-        if any(k in lower for k in ['fuerza', 'strength', 'pesa']): return 'bg-red-500'
-        if any(k in lower for k in ['nataci', 'swim', 'agua']): return 'bg-blue-500'
-        if any(k in lower for k in ['carrera', 'run', 'correr']): return 'bg-emerald-500'
-        if any(k in lower for k in ['cicl', 'bici', 'bike']): return 'bg-orange-500'
-        if any(k in lower for k in ['mma', 'bjj', 'jiu', 'luta', 'boxeo']): return 'bg-purple-500'
+        for disc in disciplines:
+            if any(k in lower for k in disc["match"]):
+                return disc["color"]
         return 'bg-yellow-500'
 
+    total_active_days = sum(1 for d in cal_data["days"] if d["has_workout"])
+
     days_html = ""
-    # Días vacíos de relleno al inicio del mes
     for _ in range(start_day):
         days_html += '<div class="h-10 rounded-lg bg-transparent"></div>'
         
@@ -234,54 +248,124 @@ async def fragment_calendar(
         date_str = day_item["date"]
         workouts = day_item["types"]
         
+        if filter:
+            active_disc = next((d for d in disciplines if d["key"] == filter), None)
+            if active_disc:
+                workouts = [w for w in workouts if any(k in w.lower() for k in active_disc["match"])]
+                has_match = len(workouts) > 0
+            else:
+                has_match = True
+        else:
+            has_match = day_item["has_workout"]
+
+        is_today = (date_str == today_str)
+
         dots_html = ""
         for w_type in workouts:
             color_class = get_dot_color(w_type)
             dots_html += f'<span class="h-1.5 w-1.5 rounded-full {color_class}"></span>'
             
+        opacity_class = "opacity-100" if (not filter or has_match) else "opacity-25"
+        
+        if is_today:
+            border_highlight = "border-blue-400 bg-blue-950/40 ring-1 ring-blue-400 font-bold"
+        elif filter and has_match:
+            border_highlight = "border-blue-500/80 bg-slate-800/60"
+        else:
+            border_highlight = "border-slate-700/40 bg-slate-900/40"
+
+        tooltip_text = f"Entrenos: {', '.join(workouts)}" if workouts else "Sin entrenamientos"
+
         days_html += f"""
-        <a href="/detalle/{date_str}" class="group relative flex h-10 flex-col items-center justify-between rounded-lg border border-slate-700/40 bg-slate-900/40 p-1 text-xs text-slate-200 transition hover:border-blue-500/50 hover:bg-slate-700/50">
-            <span>{day_num}</span>
+        <a href="/detalle/{date_str}" title="{tooltip_text}" class="group relative flex h-10 flex-col items-center justify-between rounded-lg border {border_highlight} p-1 text-xs text-slate-200 transition hover:border-blue-500/50 hover:bg-slate-700/50 {opacity_class}">
+            <span class="{'text-blue-400' if is_today else ''}">{day_num}</span>
             <div class="flex items-center justify-center space-x-1">{dots_html}</div>
         </a>
         """
 
     week_days_headers = "".join([f'<div class="py-1 text-xs font-semibold text-slate-400">{d}</div>' for d in ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']])
 
+    months_options = "".join([f'<option value="{idx}" {"selected" if idx == month else ""} class="bg-slate-800 text-slate-200">{m_name}</option>' for idx, m_name in enumerate(months_esp, start=1)])
+    years_options = "".join([f'<option value="{yr}" {"selected" if yr == year else ""} class="bg-slate-800 text-slate-200">{yr}</option>' for yr in years_range])
+
+    legend_html = ""
+    for disc in disciplines:
+        is_active = (filter == disc["key"])
+        next_filter = "" if is_active else disc["key"]
+        ring_style = "ring-2 ring-white scale-[1.02]" if is_active else "opacity-75 hover:opacity-100"
+        
+        legend_html += f"""
+        <button type="button"
+            hx-get="/api/v1/dashboard/fragment/calendar?year={year}&month={month}&filter={next_filter}"
+            hx-target="#compact-calendar-widget"
+            hx-swap="outerHTML"
+            class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg transition cursor-pointer bg-slate-900/80 border border-slate-700/50 w-full {ring_style}">
+            <span class="h-2.5 w-2.5 rounded-full {disc['color']}"></span> 
+            <span class="text-xs {'font-bold text-white' if is_active else 'text-slate-300'}">{disc['label']}</span>
+        </button>
+        """
+
     html = f"""
     <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md space-y-4" id="compact-calendar-widget">
         <div class="border-b border-slate-700/60 pb-3 flex justify-between items-center">
-            <h3 class="text-base font-bold text-slate-200">Calendario Mensual</h3>
-            <span class="text-xs font-mono text-slate-400">{month_name} {year}</span>
-        </div>
-
-        <!-- Botones de navegación de mes con HTMX -->
-        <div class="flex w-full items-center justify-between gap-2">
-            <button type="button" 
-                hx-get="/api/v1/dashboard/fragment/calendar?year={prev_year}&month={prev_month}" 
-                hx-target="#compact-calendar-widget" 
-                hx-swap="outerHTML"
-                class="rounded-lg border border-slate-700/60 bg-slate-900/50 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white cursor-pointer">
-                ← {months_esp[prev_month - 1][:3]}
-            </button>
+            <div>
+                <h3 class="text-base font-bold text-slate-200">Calendario Mensual</h3>
+                <p class="text-[11px] text-slate-400">{total_active_days} días de entrenamiento este mes</p>
+            </div>
             
-            <span class="text-xs font-semibold text-slate-200">{month_name} {year}</span>
-
-            <button type="button" 
-                hx-get="/api/v1/dashboard/fragment/calendar?year={next_year}&month={next_month}" 
-                hx-target="#compact-calendar-widget" 
+            <button type="button"
+                hx-get="/api/v1/dashboard/fragment/calendar?year={current_year}&month={current_month}&filter={filter or ''}"
+                hx-target="#compact-calendar-widget"
                 hx-swap="outerHTML"
-                class="rounded-lg border border-slate-700/60 bg-slate-900/50 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white cursor-pointer">
-                {months_esp[next_month - 1][:3]} →
+                class="rounded-lg bg-blue-600/20 border border-blue-500/40 px-2.5 py-1 text-[11px] font-semibold text-blue-400 hover:bg-blue-600/30 transition cursor-pointer">
+                Hoy
             </button>
         </div>
 
-        <!-- Leyenda de colores -->
-        <div class="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700/40 bg-slate-900/50 p-2.5 text-xs text-slate-400">
-            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-red-500"></span> Fuerza</span>
-            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Carrera</span>
-            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span> Ciclismo</span>
-            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-blue-500"></span> Natación</span>
+        <!-- Controles de navegación y selectores -->
+        <div class="flex w-full items-center gap-1.5">
+            <button type="button" 
+                hx-get="/api/v1/dashboard/fragment/calendar?year={prev_year}&month={prev_month}&filter={filter or ''}" 
+                hx-target="#compact-calendar-widget" 
+                hx-swap="outerHTML"
+                class="shrink-0 rounded-lg border border-slate-700/60 bg-slate-900/50 p-2 text-slate-300 transition hover:bg-slate-700 hover:text-white cursor-pointer"
+                aria-label="Mes anterior">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+
+            <select name="month" 
+                hx-get="/api/v1/dashboard/fragment/calendar" 
+                hx-target="#compact-calendar-widget" 
+                hx-swap="outerHTML"
+                hx-include="#compact-calendar-widget select, #compact-calendar-widget [name='filter']"
+                class="min-w-0 flex-1 truncate rounded-lg border border-slate-700/60 bg-slate-900/50 px-2 py-2 text-center text-xs font-medium text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                {months_options}
+            </select>
+
+            <select name="year" 
+                hx-get="/api/v1/dashboard/fragment/calendar" 
+                hx-target="#compact-calendar-widget" 
+                hx-swap="outerHTML"
+                hx-include="#compact-calendar-widget select, #compact-calendar-widget [name='filter']"
+                class="w-20 shrink-0 rounded-lg border border-slate-700/60 bg-slate-900/50 px-2 py-2 text-center text-xs font-medium text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                {years_options}
+            </select>
+
+            <button type="button" 
+                hx-get="/api/v1/dashboard/fragment/calendar?year={next_year}&month={next_month}&filter={filter or ''}" 
+                hx-target="#compact-calendar-widget" 
+                hx-swap="outerHTML"
+                class="shrink-0 rounded-lg border border-slate-700/60 bg-slate-900/50 p-2 text-slate-300 transition hover:bg-slate-700 hover:text-white cursor-pointer"
+                aria-label="Mes siguiente">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+        </div>
+
+        <input type="hidden" name="filter" value="{filter or ''}">
+
+        <!-- Leyenda Interactiva en Grid (2 columnas en móvil, 4 en pantallas medianas/grandes) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-xl border border-slate-700/40 bg-slate-900/50 p-2.5">
+            {legend_html}
         </div>
 
         <!-- Grid del Calendario -->
