@@ -1,307 +1,202 @@
 # app/database.py
 # Conexión a DuckDB
-# Módulo para la gestión de la base de datos DuckDB
+# Módulo optimizado para la gestión de la base de datos DuckDB
 
 import duckdb
+import json
 from pathlib import Path
+from contextlib import contextmanager
+from config import DATA_DIR
 
-DB_PATH = Path(__file__).parent.parent / "data" / "fitnotes.duckdb"
+DB_PATH = DATA_DIR / "fitnotes.duckdb"
 
-# Datos de referencia para poblar la tabla
-INITIAL_EXERCISES_DATA = [
-    # Plancha (Fuerza)
-    ("Plancha", "Fuerza", "Abdominales", "Principal"),
-    ("Plancha", "Fuerza", "Transverso del abdomen", "Principal"),
-    ("Plancha", "Fuerza", "Hombros", "Asistencial"),
-    ("Plancha", "Fuerza", "Glúteos", "Asistencial"),
+def get_db(solo_lectura: bool = True):
+  """Fábrica de dependencias para FastAPI.
+  Permite alternar entre modo lectura o lectura/escritura.
+  """
+  def _dependency():
+    # Asegura que la carpeta data existe si vamos a escribir
+    if not solo_lectura:
+      DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    # Correr (Cardio)
-    ("Correr", "Correr", "Cuádriceps", "Principal"),
-    ("Correr", "Correr", "Isquiotibiales", "Principal"),
-    ("Correr", "Correr", "Gemelos", "Principal"),
-    ("Correr", "Correr", "Glúteos", "Asistencial"),
-    ("Correr", "Correr", "Core", "Asistencial"),
+    conn = duckdb.connect(str(DB_PATH), read_only=solo_lectura)
+    try:
+      yield conn
+    finally:
+      conn.close()
 
-    # Natación (Cardio)
-    ("Natación", "Natación", "Dorsal ancho", "Principal"),
-    ("Natación", "Natación", "Hombros", "Principal"),
-    ("Natación", "Natación", "Pectoral", "Principal"),
-    ("Natación", "Natación", "Tríceps", "Asistencial"),
-    ("Natación", "Natación", "Core", "Asistencial"),
+  return _dependency
 
-    # Ciclismo (Cardio)
-    ("Ciclismo", "Ciclismo", "Cuádriceps", "Principal"),
-    ("Ciclismo", "Ciclismo", "Glúteos", "Principal"),
-    ("Ciclismo", "Ciclismo", "Gemelos", "Principal"),
-    ("Ciclismo", "Ciclismo", "Isquiotibiales", "Asistencial"),
-
-    # Chin Up (Fuerza)
-    ("Chin Up", "Fuerza", "Bíceps", "Principal"),
-    ("Chin Up", "Fuerza", "Dorsal ancho", "Principal"),
-    ("Chin Up", "Fuerza", "Braquial", "Asistencial"),
-    ("Chin Up", "Fuerza", "Trapecio", "Asistencial"),
-    ("Chin Up", "Fuerza", "Abdominales", "Asistencial"),
-
-    # Dominadas (Fuerza)
-    ("Dominadas", "Fuerza", "Dorsal ancho", "Principal"),
-    ("Dominadas", "Fuerza", "Redondo mayor", "Principal"),
-    ("Dominadas", "Fuerza", "Bíceps", "Asistencial"),
-    ("Dominadas", "Fuerza", "Trapecio", "Asistencial"),
-    ("Dominadas", "Fuerza", "Romboide", "Asistencial"),
-
-    # Peso muerto (Fuerza)
-    ("Peso muerto", "Fuerza", "Isquiotibiales", "Principal"),
-    ("Peso muerto", "Fuerza", "Glúteos", "Principal"),
-    ("Peso muerto", "Fuerza", "Erectores espinales", "Principal"),
-    ("Peso muerto", "Fuerza", "Cuádriceps", "Asistencial"),
-    ("Peso muerto", "Fuerza", "Trapecio", "Asistencial"),
-
-    # Sentadillas (Fuerza)
-    ("Sentadillas", "Fuerza", "Cuádriceps", "Principal"),
-    ("Sentadillas", "Fuerza", "Glúteos", "Principal"),
-    ("Sentadillas", "Fuerza", "Isquiotibiales", "Asistencial"),
-    ("Sentadillas", "Fuerza", "Erectores espinales", "Asistencial"),
-    ("Sentadillas", "Fuerza", "Abdominales", "Asistencial"),
-
-    # Press militar (Fuerza)
-    ("Press militar", "Fuerza", "Deltoides (Hombros)", "Principal"),
-    ("Press militar", "Fuerza", "Tríceps", "Asistencial"),
-    ("Press militar", "Fuerza", "Pectoral superior", "Asistencial"),
-    ("Press militar", "Fuerza", "Core", "Asistencial"),
-
-    # Press Banca 30° (Fuerza)
-    ("Press Banca 30°", "Fuerza", "Pectoral superior", "Principal"),
-    ("Press Banca 30°", "Fuerza", "Deltoides anterior", "Asistencial"),
-    ("Press Banca 30°", "Fuerza", "Tríceps", "Asistencial"),
-
-    # Press banca (Fuerza)
-    ("Press banca", "Fuerza", "Pectoral mayor", "Principal"),
-    ("Press banca", "Fuerza", "Tríceps", "Asistencial"),
-    ("Press banca", "Fuerza", "Deltoides anterior", "Asistencial"),
-
-    # Elevaciones De Cadera (Fuerza)
-    ("Elevaciones De Cadera", "Fuerza", "Glúteos", "Principal"),
-    ("Elevaciones De Cadera", "Fuerza", "Isquiotibiales", "Asistencial"),
-    ("Elevaciones De Cadera", "Fuerza", "Erectores espinales", "Asistencial"),
-
-    # Paseo Granjero (Fuerza)
-    ("Paseo Granjero", "Fuerza", "Antebrazos", "Principal"),
-    ("Paseo Granjero", "Fuerza", "Trapecio", "Principal"),
-    ("Paseo Granjero", "Fuerza", "Core", "Principal"),
-    ("Paseo Granjero", "Fuerza", "Glúteos", "Asistencial"),
-    ("Paseo Granjero", "Fuerza", "Gemelos", "Asistencial"),
-
-    # Remo con Barra (Fuerza)
-    ("Remo con Barra", "Fuerza", "Dorsal ancho", "Principal"),
-    ("Remo con Barra", "Fuerza", "Romboide", "Principal"),
-    ("Remo con Barra", "Fuerza", "Trapecio", "Principal"),
-    ("Remo con Barra", "Fuerza", "Bíceps", "Asistencial"),
-    ("Remo con Barra", "Fuerza", "Erectores espinales", "Asistencial"),
-
-    # Sombra BJJ (Fuerza / BJJ)
-    ("Sombra BJJ", "Fuerza", "Core", "Principal"),
-    ("Sombra BJJ", "Fuerza", "Glúteos", "Asistencial"),
-    ("Sombra BJJ", "Fuerza", "Isquiotibiales", "Asistencial"),
-    ("Sombra BJJ", "Fuerza", "Cuádriceps", "Principal"),
-
-    # Vuelos Laterales (Fuerza)
-    ("Vuelos Laterales", "Fuerza", "Deltoides lateral", "Principal"),
-    ("Vuelos Laterales", "Fuerza", "Trapecio", "Asistencial"),
-    ("Vuelos Laterales", "Fuerza", "Deltoides anterior", "Asistencial"),
-]
-
-def get_db():
-    """Retorna una conexión activa a la base de datos DuckDB."""
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = duckdb.connect(str(DB_PATH))
-    init_db(conn)
-    return conn
 
 def init_db(conn: duckdb.DuckDBPyConnection):
     """Inicializa la secuencia y la tabla 'workout_logs' si no existen."""
-    # 1. Creamos la secuencia para los IDs auto-incrementales
-    conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_workout_id START 1;")
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = duckdb.connect(str(DB_PATH))
 
-    # 2. Creamos la tabla asignando el default de la secuencia al ID
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS workout_logs (
-            id BIGINT PRIMARY KEY DEFAULT nextval('seq_workout_id'),
-            fecha DATE NOT NULL,
-            exercise VARCHAR NOT NULL,
-            category VARCHAR NOT NULL,
-            weight DOUBLE,
-            weight_unit VARCHAR,
-            reps INT,
-            distance DOUBLE,
-            distance_unit VARCHAR,
-            time_spent VARCHAR,
-            comment VARCHAR
-        )
-    """)
+    try:
+        # 1. Creamos la secuencia para los IDs auto-incrementales
+        conn.execute("CREATE SEQUENCE IF NOT EXISTS seq_workout_id START 1;")
 
-    # 3. Tabla 'exercise_muscles'
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS exercise_muscles (
-            ejercicio VARCHAR NOT NULL,
-            tipo_ejercicio VARCHAR NOT NULL,
-            musculos VARCHAR NOT NULL,
-            tipo_musculos VARCHAR NOT NULL
-        )
-    """)
+        # 2. Creamos la tabla asignando el default de la secuencia al ID
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS workout_logs (
+                id BIGINT PRIMARY KEY DEFAULT nextval('seq_workout_id'),
+                fecha DATE NOT NULL,
+                exercise VARCHAR NOT NULL,
+                category VARCHAR NOT NULL,
+                weight DOUBLE,
+                weight_unit VARCHAR,
+                reps INT,
+                distance DOUBLE,
+                distance_unit VARCHAR,
+                time_spent VARCHAR,
+                comment VARCHAR
+            )
+        """)
 
-    # 4. Tabla de mapeo 'muscle_svg_mapping' para asociar músculos con IDs SVG
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS muscle_svg_mapping (
-            muscle_name VARCHAR NOT NULL PRIMARY KEY,
-            svg_ids VARCHAR NOT NULL
-        )
-    """)
+        # 3. Tabla 'exercise_muscles'
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS exercise_muscles (
+                ejercicio VARCHAR NOT NULL,
+                tipo_ejercicio VARCHAR NOT NULL,
+                musculos VARCHAR NOT NULL,
+                tipo_musculos VARCHAR NOT NULL
+            )
+        """)
 
-    # 5. Inserción inicial de datos (solo si la tabla está vacía)
-    count = conn.execute("SELECT COUNT(*) FROM exercise_muscles").fetchone()[0]
-    if count == 0:
-        conn.executemany("""
-            INSERT INTO exercise_muscles (ejercicio, tipo_ejercicio, musculos, tipo_musculos)
-            VALUES (?, ?, ?, ?)
-        """, INITIAL_EXERCISES_DATA)
-    
-    # 6. Inserción de mapeos de músculos a SVG (solo si está vacía)
-    svg_count = conn.execute("SELECT COUNT(*) FROM muscle_svg_mapping").fetchone()[0]
-    if svg_count == 0:
-        muscle_svg_data = [
-            ("abdominales", "abs"),
-            ("transverso del abdomen", "abs"),
-            ("core", "abs"),
-            ("hombros", "shoulders-front,shoulders-back"),
-            ("deltoides (hombros)", "shoulders-front,shoulders-back"),
-            ("deltoides", "shoulders-front,shoulders-back"),
-            ("deltoides anterior", "shoulders-front"),
-            ("deltoides posterior", "shoulders-back"),
-            ("deltoides lateral", "shoulders-front,shoulders-back"),
-            ("glúteos", "glutes"),
-            ("cuádriceps", "quads"),
-            ("isquiotibiales", "hamstrings"),
-            ("gemelos", "calves-front,calves-back"),
-            ("dorsal ancho", "lats"),
-            ("pectoral", "chest"),
-            ("pectoral mayor", "chest"),
-            ("pectoral superior", "chest-upper"),
-            ("tríceps", "triceps"),
-            ("bíceps", "biceps"),
-            ("braquial", "biceps"),
-            ("antebrazos", "antebrazos"),
-            ("trapecio", "traps-front,traps-back"),
-            ("redondo mayor", "teres"),
-            ("romboide", "rhomboids"),
-            ("erectores espinales", "erectors"),
-        ]
-        conn.executemany("""
-            INSERT INTO muscle_svg_mapping (muscle_name, svg_ids)
-            VALUES (?, ?)
-        """, muscle_svg_data)
-    
-    create_views(conn)
+        # 4. Tabla de mapeo 'muscle_svg_mapping' para asociar músculos con IDs SVG
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS muscle_svg_mapping (
+                muscle_name VARCHAR NOT NULL PRIMARY KEY,
+                svg_ids VARCHAR NOT NULL
+            )
+        """)
 
-def create_views(conn: duckdb.DuckDBPyConnection):
-    """Crea las vistas para consultas de logs completos y sesiones."""
-    
-    # 1. Vista base
-    conn.execute("""
-        CREATE VIEW IF NOT EXISTS v_workout AS
-        SELECT 
-            W.id, 
-            W.fecha,
-            E.tipo_ejercicio,
-            W.exercise as ejercicio, 
-            W.weight, 
-            W.weight_unit, 
-            W.reps, 
-            W.weight * W.reps AS volumen_total,
-            W.distance, 
-            W.distance_unit, 
-            W.time_spent, 
-            EXTRACT(epoch FROM W.time_spent::INTERVAL)  as tiempo_segundos,
-            round((W.distance / 1000) / (EXTRACT(epoch FROM W.time_spent::INTERVAL) /3600), 2) AS velocidad_km_hora,
-            COALESCE(ROUND((EXTRACT(epoch FROM W.time_spent::INTERVAL) / 60) / (NULLIF(W.distance, 0) / 1000), 2),0) AS ritmo_min_km,
-            W.comment
-        FROM workout_logs W 
-        LEFT JOIN (
-            SELECT DISTINCT ejercicio, tipo_ejercicio 
-            FROM exercise_muscles
-        ) E 
-            ON W.exercise = E.ejercicio
-        ORDER BY W.id;
-    """)
-
-
-    # 2. Vista para agrupar sesiones distintas por fecha
-    conn.execute("""
-        CREATE VIEW IF NOT EXISTS v_resumen_diario AS
-        WITH workout_base AS (
-            -- 1. Unimos el log con los tipos de ejercicio
+        # 5. RECARGA AUTOMÁTICA DESDE EL JSON (Catálogo siempre actualizado)
+        seed_file = DATA_DIR / "exercises_seed.json"
+        if seed_file.exists():
+            with open(seed_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                
+                # Vaciamos el catálogo anterior para evitar duplicados
+                conn.execute("TRUNCATE TABLE exercise_muscles;")
+                conn.execute("TRUNCATE TABLE muscle_svg_mapping;")
+                
+                # Insertamos los datos frescos del JSON
+                conn.executemany("""
+                    INSERT INTO exercise_muscles (ejercicio, tipo_ejercicio, musculos, tipo_musculos)
+                    VALUES (?, ?, ?, ?)
+                """, data["exercises"])
+                
+                conn.executemany("""
+                    INSERT INTO muscle_svg_mapping (muscle_name, svg_ids)
+                    VALUES (?, ?)
+                """, data["muscle_svg"])
+        
+        
+        # 6. Crea las vistas para consultas de logs completos y sesiones
+        
+        # 6.1. Vista base
+        conn.execute("""
+            CREATE VIEW IF NOT EXISTS v_workout AS
             SELECT 
-                W.id,
+                W.id, 
                 W.fecha,
-                W.ejercicio,
-                W.tipo_ejercicio,
+                E.tipo_ejercicio,
+                W.exercise as ejercicio, 
+                W.weight, 
+                W.weight_unit, 
+                W.reps, 
+                W.weight * W.reps AS volumen_total,
+                W.distance, 
+                W.distance_unit, 
+                W.time_spent, 
+                EXTRACT(epoch FROM W.time_spent::INTERVAL)  as tiempo_segundos,
+                round((W.distance / 1000) / (EXTRACT(epoch FROM W.time_spent::INTERVAL) /3600), 2) AS velocidad_km_hora,
+                COALESCE(ROUND((EXTRACT(epoch FROM W.time_spent::INTERVAL) / 60) / (NULLIF(W.distance, 0) / 1000), 2),0) AS ritmo_min_km,
+                W.comment
+            FROM workout_logs W 
+            LEFT JOIN (
+                SELECT DISTINCT ejercicio, tipo_ejercicio 
+                FROM exercise_muscles
+            ) E 
+                ON W.exercise = E.ejercicio
+            ORDER BY W.id;
+        """)
+
+
+        # 6.2. Vista para agrupar sesiones distintas por fecha
+        conn.execute("""
+            CREATE VIEW IF NOT EXISTS v_resumen_diario AS
+            WITH workout_base AS (
+                -- 1. Unimos el log con los tipos de ejercicio
+                SELECT 
+                    W.id,
+                    W.fecha,
+                    W.ejercicio,
+                    W.tipo_ejercicio,
+                    sum(volumen_total) as volumen_total,
+                    sum(tiempo_segundos) as tiempo_segundos,
+                    sum(distance) as distance
+                FROM v_workout W
+                group by W.id,
+                        W.fecha,
+                        W.ejercicio,
+                        W.tipo_ejercicio
+                order by W.id
+            )
+            SELECT 
+                fecha,
+                tipo_ejercicio,
+                -- Contamos cuántos ejercicios/series componen esta sesión específica
+                COUNT(distinct tipo_ejercicio) AS n_tipo_ejercicio,
+                COUNT(distinct ejercicio) AS n_ejercicios,
+                COUNT(*) AS n_series,
                 sum(volumen_total) as volumen_total,
                 sum(tiempo_segundos) as tiempo_segundos,
-                sum(distance) as distance
-            FROM v_workout W
-            group by W.id,
-                     W.fecha,
-                     W.ejercicio,
-                     W.tipo_ejercicio
-            order by W.id
-        )
-        SELECT 
-            fecha,
-            tipo_ejercicio,
-            -- Contamos cuántos ejercicios/series componen esta sesión específica
-            COUNT(distinct tipo_ejercicio) AS n_tipo_ejercicio,
-            COUNT(distinct ejercicio) AS n_ejercicios,
-            COUNT(*) AS n_series,
-            sum(volumen_total) as volumen_total,
-            sum(tiempo_segundos) as tiempo_segundos,
-            sum(distance) as distance,
-            round(sum(distance/1000)/sum(tiempo_segundos)*3600, 2) as velocidad_km_hora,
-            round(sum(tiempo_segundos)/60/sum(distance)*1000, 2) as ritmo_min_km,
-            -- Lista los ejercicios incluidos en esta sesión concreta
-            STRING_AGG(DISTINCT ejercicio, ', ') AS ejercicios_realizados
-        FROM workout_base
-        GROUP BY 
-            fecha,
-            tipo_ejercicio
-        ORDER BY fecha DESC, tipo_ejercicio;
-    """)
+                sum(distance) as distance,
+                round(sum(distance/1000)/sum(tiempo_segundos)*3600, 2) as velocidad_km_hora,
+                round(sum(tiempo_segundos)/60/sum(distance)*1000, 2) as ritmo_min_km,
+                -- Lista los ejercicios incluidos en esta sesión concreta
+                STRING_AGG(DISTINCT ejercicio, ', ') AS ejercicios_realizados
+            FROM workout_base
+            GROUP BY 
+                fecha,
+                tipo_ejercicio
+            ORDER BY fecha DESC, tipo_ejercicio;
+        """)
 
-    # 3. Vista para detallar los ejercicios de una sesión específica (por fecha)
-    conn.execute("""
-        CREATE VIEW IF NOT EXISTS v_ejercicios_detalle AS
-        WITH orden_ejercicios as (
-            select fecha, ejercicio, min(id) as min_id
-            from v_workout
-            group by fecha, ejercicio
-            ) 
-        select O.min_id
-            , W.fecha
-            , W.tipo_ejercicio
-            , W.ejercicio
-            , CASE WHEN W.tipo_ejercicio = 'Fuerza' 
-                        THEN STRING_AGG(concat('(',W.weight::INT, W.weight_unit,' x ', W.reps, ')'), ',') 
-                    ELSE STRING_AGG(concat('',W.distance::INT, W.distance_unit, ' en ', W.time_spent, ', ', round(W.ritmo_min_km, 2), ' min/km'), ', ') 
-            END as detalle_ejercicio
-        from v_workout W
-            INNER JOIN orden_ejercicios O
-                ON W.fecha = O.fecha AND 
-                W.ejercicio = O.ejercicio
-        group by O.min_id
-            , W.fecha
-            , W.tipo_ejercicio
-            , W.ejercicio
-        order by O.min_id;
-    """)
+        # 6.3. Vista para detallar los ejercicios de una sesión específica (por fecha)
+        conn.execute("""
+            CREATE VIEW IF NOT EXISTS v_ejercicios_detalle AS
+            WITH orden_ejercicios as (
+                select fecha, ejercicio, min(id) as min_id
+                from v_workout
+                group by fecha, ejercicio
+                ) 
+            select O.min_id
+                , W.fecha
+                , W.tipo_ejercicio
+                , W.ejercicio
+                , CASE WHEN W.tipo_ejercicio = 'Fuerza' 
+                            THEN STRING_AGG(concat('(',W.weight::INT, W.weight_unit,' x ', W.reps, ')'), ',') 
+                        ELSE STRING_AGG(concat('',W.distance::INT, W.distance_unit, ' en ', W.time_spent, ', ', round(W.ritmo_min_km, 2), ' min/km'), ', ') 
+                END as detalle_ejercicio
+            from v_workout W
+                INNER JOIN orden_ejercicios O
+                    ON W.fecha = O.fecha AND 
+                    W.ejercicio = O.ejercicio
+            group by O.min_id
+                , W.fecha
+                , W.tipo_ejercicio
+                , W.ejercicio
+            order by O.min_id;
+        """)
+    finally:
+        conn.close()
 
+conn = get_db(solo_lectura=False)
+init_db(conn)
 
 """
 

@@ -21,9 +21,5 @@ venv/
 Thumbs.db
 
 # Ficheros datos
-*data/uploads/*.csv
-*data/*.duckdb
-
-*data/data_develop/*
-*data/data_staging/*
-*data/data_main/*
+*data/data_*
+*data/uploads/*
