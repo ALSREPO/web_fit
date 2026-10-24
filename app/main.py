@@ -49,10 +49,10 @@ templates = Jinja2Templates(directory="app/templates")
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
   # Si aún no tienes el index.html creado, puedes devolver un texto plano temporalmente:
-  # return "<h1>Diario de Hierro - Backend Activo</h1>"
+  #return "<h1>Diario de Hierro - Backend Activo</h1>"
 
   # O renderizar tu plantilla de Jinja2 cuando la tengas lista:
-  return templates.TemplateResponse("index.html", {"request": request})
+  return templates.TemplateResponse(request, "index.html", context={"request": request})
 
 # Si entra en una ruta no definida, redirige a la raíz
 @app.exception_handler(status.HTTP_404_NOT_FOUND)
