@@ -167,30 +167,181 @@ async def fragment_last_workout():
     """
 
 @router.get("/fragment/summary-kpis", response_class=HTMLResponse)
-async def fragment_summary_kpis(period: str = Query("month", pattern="^(week|month|year|all)$")):
-    res = DashboardService.get_summary(period)
-    kpis = res["kpis"]
+async def fragment_summary_kpis(
+    period: str = Query("week", pattern="^(week|month|year|all)$"),
+    metric: str = Query("sessions_count", pattern="^(sessions_count|volume_kg|distance_km)$"),
+    view: str = Query("time", pattern="^(time|type)$")
+):
+    data = DashboardService.get_summary(period)
+    kpis = data["kpis"]
     
-    return f"""
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-2" id="summary-kpis">
-        <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center">
-            <span class="text-xs font-medium text-slate-400">Días</span>
-            <p class="mt-1 text-2xl font-bold text-slate-100">{kpis['days_count']}</p>
+    # Seleccionar origen de datos según la vista (Periodo o Tipo)
+    raw_data = data["chart_by_time"] if view == "time" else data["chart_by_type"]
+    
+    # Filtrar ceros en vista tipo si es necesario
+    if view == "type":
+        chart_data = [item for item in raw_data if item.get(metric, 0) > 0]
+    else:
+        chart_data = raw_data
+
+    # Calcular el valor máximo estrictamente en función de la métrica seleccionada (soluciona el problema de las barras)
+    max_val = max([item.get(metric, 0) for item in chart_data], default=1)
+    if max_val == 0:
+        max_val = 1
+
+    metric_units = {
+        "sessions_count": "sesiones",
+        "volume_kg": "kg",
+        "distance_km": "km"
+    }
+
+    periods_def = [("week", "Semana"), ("month", "Mes"), ("year", "Año"), ("all", "Histórico")]
+    
+    # Botones de Periodo
+    periods_html = ""
+    for p_id, p_label in periods_def:
+        is_active = (period == p_id)
+        btn_class = "bg-blue-600 text-white shadow-sm" if is_active else "text-slate-400 hover:text-slate-200"
+        periods_html += f"""
+        <button type="button" 
+            hx-get="/api/v1/dashboard/fragment/summary-kpis?period={p_id}&metric={metric}&view={view}" 
+            hx-target="#summary-card-container" 
+            hx-swap="outerHTML"
+            class="rounded-lg py-1.5 text-center text-xs font-semibold transition-all {btn_class} cursor-pointer">
+            {p_label}
+        </button>
+        """
+
+    # Botones de Vista (Periodo / Tipo)
+    view_time_class = "bg-slate-700 text-slate-100" if view == "time" else "text-slate-400 hover:text-slate-200"
+    view_type_class = "bg-slate-700 text-slate-100" if view == "type" else "text-slate-400 hover:text-slate-200"
+
+    # Botones de Métrica
+    m_sessions_class = "text-blue-400 underline underline-offset-4" if metric == "sessions_count" else "text-slate-400 hover:text-slate-200"
+    m_volume_class = "text-amber-400 underline underline-offset-4" if metric == "volume_kg" else "text-slate-400 hover:text-slate-200"
+    m_distance_class = "text-emerald-400 underline underline-offset-4" if metric == "distance_km" else "text-slate-400 hover:text-slate-200"
+
+    # Renderizar Barras del Gráfico
+    bars_html = ""
+    if not chart_data:
+        bars_html = '<div class="flex h-52 w-full items-center justify-center text-xs text-slate-500">No hay datos registrados para este periodo.</div>'
+    else:
+        total_bars = len(chart_data)
+        for idx, item in enumerate(chart_data):
+            val = item.get(metric, 0)
+            height_percent = max((val / max_val) * 100, 4) if val > 0 else 0
+            show_label = not (period == "month" and view == "time") or (idx % 5 == 0 or idx == total_bars - 1)
+            
+            if metric == "sessions_count":
+                bar_color = "bg-blue-500 group-hover:bg-blue-400" if val > 0 else "bg-slate-800/30"
+                text_color = "text-blue-400"
+            elif metric == "volume_kg":
+                bar_color = "bg-amber-500 group-hover:bg-amber-400" if val > 0 else "bg-slate-800/30"
+                text_color = "text-amber-400"
+            else:
+                bar_color = "bg-emerald-500 group-hover:bg-emerald-400" if val > 0 else "bg-slate-800/30"
+                text_color = "text-emerald-400"
+
+            formatted_val = f"{val:,.0f}".replace(",", ".")
+
+            bars_html += f"""
+            <div class="group relative flex h-full flex-1 flex-col items-center justify-end cursor-pointer">
+                <div class="absolute -top-10 rounded bg-slate-950 px-2 py-1 text-[10px] font-mono text-slate-100 shadow-lg border border-slate-700 z-20 whitespace-nowrap pointer-events-none transition-opacity hidden group-hover:block flex flex-col items-center leading-tight">
+                    <span class="text-[9px] text-slate-400 font-sans">{item['label']}</span>
+                    <span class="font-bold {text_color}">{formatted_val} {metric_units[metric]}</span>
+                </div>
+                <div class="w-full rounded-t-md transition-all duration-300 shadow-sm {bar_color}" style="height: {height_percent}%"></div>
+                <span class="absolute -bottom-6 text-[9px] font-medium text-slate-400 truncate w-full text-center">
+                    {item['label'] if show_label else ''}
+                </span>
+            </div>
+            """
+
+    html = f"""
+    <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md space-y-6" id="summary-card-container">
+        <!-- Header con Selector de Periodo -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/60 pb-3">
+            <h2 class="text-base font-bold text-slate-200">Resumen</h2>
+            <div class="grid w-full flex-1 grid-cols-4 gap-1 rounded-xl border border-slate-700/40 bg-slate-900/80 p-1 min-w-[280px] sm:w-auto sm:flex-none">
+                {periods_html}
+            </div>
         </div>
-        <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center">
-            <span class="text-xs font-medium text-slate-400">Sesiones</span>
-            <p class="mt-1 text-2xl font-bold text-blue-400">{kpis['sessions_count']}</p>
+
+        <!-- Tarjetas KPI -->
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center">
+                <span class="text-xs font-medium text-slate-400">Días</span>
+                <p class="mt-1 text-2xl font-bold text-slate-100">{kpis['days_count']}</p>
+            </div>
+            <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center">
+                <span class="text-xs font-medium text-slate-400">Sesiones</span>
+                <p class="mt-1 text-2xl font-bold text-blue-400">{kpis['sessions_count']}</p>
+            </div>
+            <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center">
+                <span class="text-xs font-medium text-slate-400">Volumen</span>
+                <p class="mt-1 text-2xl font-bold text-amber-400">{f"{kpis['total_volume_kg']:,.0f}".replace(',', '.')} <span class="text-xs font-normal text-slate-400">kg</span></p>
+            </div>
+            <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center">
+                <span class="text-xs font-medium text-slate-400">Distancia</span>
+                <p class="mt-1 text-2xl font-bold text-emerald-400">{kpis['total_distance_km']} <span class="text-xs font-normal text-slate-400">km</span></p>
+            </div>
         </div>
-        <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center">
-            <span class="text-xs font-medium text-slate-400">Volumen</span>
-            <p class="mt-1 text-2xl font-bold text-amber-400">{kpis['total_volume_kg']:,} <span class="text-xs font-normal text-slate-400">kg</span></p>
+
+        <!-- Controles del Gráfico (Vista y Métrica) -->
+        <div class="space-y-4 pt-2">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex gap-1 rounded-lg bg-slate-900/60 p-1 border border-slate-700/30">
+                    <button type="button" 
+                        hx-get="/api/v1/dashboard/fragment/summary-kpis?period={period}&metric={metric}&view=time" 
+                        hx-target="#summary-card-container" hx-swap="outerHTML"
+                        class="rounded px-2.5 py-1 text-xs font-medium transition-all {view_time_class} cursor-pointer">
+                        Periodo
+                    </button>
+                    <button type="button" 
+                        hx-get="/api/v1/dashboard/fragment/summary-kpis?period={period}&metric={metric}&view=type" 
+                        hx-target="#summary-card-container" hx-swap="outerHTML"
+                        class="rounded px-2.5 py-1 text-xs font-medium transition-all {view_type_class} cursor-pointer">
+                        Tipo
+                    </button>
+                </div>
+
+                <div class="flex gap-3 text-xs font-medium">
+                    <button type="button" 
+                        hx-get="/api/v1/dashboard/fragment/summary-kpis?period={period}&metric=sessions_count&view={view}" 
+                        hx-target="#summary-card-container" hx-swap="outerHTML"
+                        class="transition-colors {m_sessions_class} cursor-pointer">
+                        Sesiones
+                    </button>
+                    <button type="button" 
+                        hx-get="/api/v1/dashboard/fragment/summary-kpis?period={period}&metric=volume_kg&view={view}" 
+                        hx-target="#summary-card-container" hx-swap="outerHTML"
+                        class="transition-colors {m_volume_class} cursor-pointer">
+                        Volumen (kg)
+                    </button>
+                    <button type="button" 
+                        hx-get="/api/v1/dashboard/fragment/summary-kpis?period={period}&metric=distance_km&view={view}" 
+                        hx-target="#summary-card-container" hx-swap="outerHTML"
+                        class="transition-colors {m_distance_class} cursor-pointer">
+                        Distancia (km)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Área del Gráfico de Barras -->
+            <div class="relative h-52 w-full rounded-xl border border-slate-700/40 bg-slate-900/40 p-3 pt-6 pb-8 flex items-end">
+                <div class="absolute inset-x-3 top-6 bottom-8 flex flex-col justify-between pointer-events-none opacity-15">
+                    <div class="border-b border-slate-400 w-full"></div>
+                    <div class="border-b border-slate-400 w-full border-dashed"></div>
+                    <div class="border-b border-slate-400 w-full"></div>
+                </div>
+                <div class="relative flex h-full w-full items-end justify-between gap-1">
+                    {bars_html}
+                </div>
+            </div>
         </div>
-        <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center">
-            <span class="text-xs font-medium text-slate-400">Distancia</span>
-            <p class="mt-1 text-2xl font-bold text-emerald-400">{kpis['total_distance_km']} <span class="text-xs font-normal text-slate-400">km</span></p>
-        </div>
-    </div>
+    </section>
     """
+    return HTMLResponse(content=html)
 
 
 @router.get("/fragment/calendar", response_class=HTMLResponse)

@@ -24,49 +24,16 @@
         </section>
     </div>
 
-    <!-- 3. Resumen General -->
-    <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/60 pb-3">
-            <h2 class="text-base font-bold text-slate-200">Resumen</h2>
-            
-            <!-- Selector de Periodo con HTMX -->
-            <div class="grid w-full flex-1 grid-cols-4 gap-1 rounded-xl border border-slate-700/40 bg-slate-900/80 p-1 min-w-[280px]">
-                <button 
-                    hx-get="/api/v1/dashboard/fragment/summary-kpis?period=week" 
-                    hx-target="#summary-kpis" 
-                    class="rounded-lg py-1.5 text-center text-xs font-semibold bg-blue-600 text-white shadow-sm transition-all">
-                    Semana
-                </button>
-                <button 
-                    hx-get="/api/v1/dashboard/fragment/summary-kpis?period=month" 
-                    hx-target="#summary-kpis" 
-                    class="rounded-lg py-1.5 text-center text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all">
-                    Mes
-                </button>
-                <button 
-                    hx-get="/api/v1/dashboard/fragment/summary-kpis?period=year" 
-                    hx-target="#summary-kpis" 
-                    class="rounded-lg py-1.5 text-center text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all">
-                    Año
-                </button>
-                <button 
-                    hx-get="/api/v1/dashboard/fragment/summary-kpis?period=all" 
-                    hx-target="#summary-kpis" 
-                    class="rounded-lg py-1.5 text-center text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all">
-                    Histórico
-                </button>
+    <!-- 3. Resumen General con KPIs y Gráfico -->
+    <div hx-get="/api/v1/dashboard/fragment/summary-kpis?period=week" hx-trigger="load">
+        <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md space-y-6 animate-pulse" id="summary-card-container">
+            <div class="h-6 w-1/3 rounded bg-slate-700"></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="h-20 rounded bg-slate-700/50"></div>
+                <div class="h-20 rounded bg-slate-700/50"></div>
             </div>
-        </div>
-
-        <!-- KPIs que se cargan y actualizan dinámicamente -->
-        <div hx-get="/api/v1/dashboard/fragment/summary-kpis?period=month" hx-trigger="load">
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-2" id="summary-kpis">
-                <div class="rounded-xl border border-slate-700/40 bg-slate-900/50 p-3.5 text-center animate-pulse">
-                    <span class="text-xs font-medium text-slate-400">Cargando métricas...</span>
-                </div>
-            </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
     <!-- 4. Calendario Compacto -->
     <div hx-get="/api/v1/dashboard/fragment/calendar" hx-trigger="load">
