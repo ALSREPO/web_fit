@@ -2,18 +2,19 @@
 # Conexión a DuckDB
 # Módulo optimizado para la gestión de la base de datos DuckDB
 
-from duckdb import connect
+import duckdb
 import json
 from pathlib import Path
 from contextlib import contextmanager
-from app.config import DATA_DIR
+from app.config import DATA_DIR, ROOT_DIR
 
 DB_PATH = DATA_DIR / "fitnotes.duckdb"
+seed_file = ROOT_DIR / "data" / "exercises_seed.json"
 
 def get_write_db():
     """Generador de conexiones optimizado para FastAPI (Inyección con Depends).
     """
-    conn = connect(str(DB_PATH), read_only=False)
+    conn = duckdb.connect(str(DB_PATH), read_only=False)
     try:
         yield conn
     finally:
@@ -23,7 +24,7 @@ def get_read_db():
     """Generador de conexiones optimizado para FastAPI (Inyección con Depends).
     Se abre en modo lectura por defecto para máxima velocidad y seguridad.
     """
-    conn = connect(str(DB_PATH), read_only=True)
+    conn = duckdb.connect(str(DB_PATH), read_only=True)
     try:
         yield conn
     finally:
@@ -33,7 +34,7 @@ def get_read_db():
 def init_db():
     """Inicializa la secuencia y la tabla 'workout_logs' si no existen."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = connect(str(DB_PATH))
+    conn = duckdb.connect(str(DB_PATH))
 
     try:
         # 1. Creamos la secuencia para los IDs auto-incrementales
@@ -75,7 +76,6 @@ def init_db():
         """)
 
         # 5. RECARGA AUTOMÁTICA DESDE EL JSON (Catálogo siempre actualizado)
-        seed_file = DATA_DIR / "exercises_seed.json"
         if seed_file.exists():
             with open(seed_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
