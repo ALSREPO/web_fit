@@ -1,0 +1,196 @@
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 shadow-md" x-data="{ view: 'front' }">
+    <div class="mb-3 flex items-center justify-between gap-2">
+        <h3 class="text-base font-semibold text-white">Mapa muscular</h3>
+        <div class="flex rounded-lg border border-slate-700 bg-slate-900 p-0.5 text-xs">
+            <button
+                type="button"
+                @click="view = 'front'"
+                :class="view === 'front' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'"
+                class="rounded-md px-3 py-1.5 font-medium transition cursor-pointer"
+            >
+                Frontal
+            </button>
+            <button
+                type="button"
+                @click="view = 'back'"
+                :class="view === 'back' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'"
+                class="rounded-md px-3 py-1.5 font-medium transition cursor-pointer"
+            >
+                Trasero
+            </button>
+        </div>
+    </div>
+
+    <div class="flex justify-center">
+        <!-- VISTA FRONTAL -->
+        <template x-if="view === 'front'">
+            <svg viewBox="0 0 200 500" class="h-96 w-auto max-w-full" aria-label="Cuerpo vista frontal">
+                <defs>
+                    <filter id="shadow">
+                        <feDropShadow dx="0.5" dy="0.5" stdDeviation="1" flood-opacity="0.3" />
+                    </filter>
+                </defs>
+
+                <circle cx="100" cy="30" r="18" fill="#64748b" stroke="#0f172a" stroke-width="1" />
+                <rect x="94" y="46" width="12" height="14" fill="#64748b" stroke="#0f172a" stroke-width="0.8" />
+
+                <!-- Trapecio Frontal -->
+                {% set role = color_by_id.get('traps-front') %}
+                <path id="traps-front" d="M 75 58 L 100 52 L 125 58 L 118 75 L 100 70 L 82 75 Z"
+                    fill="{{ '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') }}"
+                    stroke="{{ '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') }}"
+                    stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Deltoides Frontales -->
+                {% set role = color_by_id.get('shoulders-front') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <ellipse cx="60" cy="78" rx="18" ry="22" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <ellipse cx="140" cy="78" rx="18" ry="22" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Pectoral -->
+                {% set role = color_by_id.get('chest') %}
+                <path id="chest" d="M 75 80 Q 100 70 125 80 L 128 140 Q 100 135 72 140 Z"
+                    fill="{{ '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') }}"
+                    stroke="{{ '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') }}"
+                    stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Pectoral Superior -->
+                {% set role = color_by_id.get('chest-upper') %}
+                <path id="chest-upper" d="M 80 75 Q 100 65 120 75 L 120 95 Q 100 90 80 95 Z"
+                    fill="{{ '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') }}"
+                    stroke="{{ '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') }}"
+                    stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Bíceps -->
+                {% set role = color_by_id.get('biceps') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <ellipse cx="46" cy="110" rx="12" ry="35" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <ellipse cx="154" cy="110" rx="12" ry="35" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Antebrazos -->
+                <rect x="38" y="142" width="10" height="40" rx="5" fill="#64748b" stroke="#0f172a" stroke-width="0.8" />
+                <rect x="152" y="142" width="10" height="40" rx="5" fill="#64748b" stroke="#0f172a" stroke-width="0.8" />
+
+                <!-- Abdomen -->
+                {% set role = color_by_id.get('abs') %}
+                <path id="abs" d="M 82 138 Q 100 133 118 138 L 115 220 Q 100 225 85 220 Z"
+                    fill="{{ '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') }}"
+                    stroke="{{ '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') }}"
+                    stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Oblicuos -->
+                <path d="M 70 160 L 85 200 L 78 240 L 62 220 Z" fill="#64748b" stroke="#0f172a" stroke-width="0.8" />
+                <path d="M 130 160 L 115 200 L 122 240 L 138 220 Z" fill="#64748b" stroke="#0f172a" stroke-width="0.8" />
+
+                <!-- Cuádriceps -->
+                {% set role = color_by_id.get('quads') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <path id="quads" d="M 72 238 Q 85 235 95 242 L 92 380 Q 80 382 65 378 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <path d="M 128 238 Q 115 235 105 242 L 108 380 Q 120 382 135 378 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Gemelos Frontales -->
+                {% set role = color_by_id.get('calves-front') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <path id="calves-front" d="M 70 382 Q 80 385 85 388 L 82 460 Q 70 458 65 450 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <path d="M 130 382 Q 120 385 115 388 L 118 460 Q 130 458 135 450 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+            </svg>
+        </template>
+
+        <!-- VISTA TRASERA -->
+        <template x-if="view === 'back'">
+            <svg viewBox="0 0 200 500" class="h-96 w-auto max-w-full" aria-label="Cuerpo vista trasera">
+                <defs>
+                    <filter id="shadow">
+                        <feDropShadow dx="0.5" dy="0.5" stdDeviation="1" flood-opacity="0.3" />
+                    </filter>
+                </defs>
+
+                <circle cx="100" cy="30" r="18" fill="#64748b" stroke="#0f172a" stroke-width="1" />
+                <rect x="94" y="46" width="12" height="14" fill="#64748b" stroke="#0f172a" stroke-width="0.8" />
+
+                <!-- Trapecio Trasero -->
+                {% set role = color_by_id.get('traps-back') %}
+                <path id="traps-back" d="M 70 60 L 100 50 L 130 60 L 122 80 L 100 75 L 78 80 Z"
+                    fill="{{ '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') }}"
+                    stroke="{{ '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') }}"
+                    stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Deltoides Traseros -->
+                {% set role = color_by_id.get('shoulders-back') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <ellipse cx="60" cy="82" rx="18" ry="22" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <ellipse cx="140" cy="82" rx="18" ry="22" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Romboides -->
+                {% set role = color_by_id.get('rhomboids') %}
+                <path id="rhomboids" d="M 88 82 L 100 76 L 112 82 L 110 115 L 100 120 L 90 115 Z"
+                    fill="{{ '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') }}"
+                    stroke="{{ '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') }}"
+                    stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Redondo Mayor -->
+                {% set role = color_by_id.get('teres') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <path id="teres" d="M 68 90 L 88 100 L 85 130 L 62 115 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <path d="M 132 90 L 112 100 L 115 130 L 138 115 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Dorsal Ancho -->
+                {% set role = color_by_id.get('lats') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <path id="lats" d="M 60 120 L 88 130 L 85 200 L 58 160 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <path d="M 140 120 L 112 130 L 115 200 L 142 160 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Erectores Espinales -->
+                {% set role = color_by_id.get('erectors') %}
+                <path id="erectors" d="M 96 115 L 104 115 L 102 220 L 98 220 Z"
+                    fill="{{ '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') }}"
+                    stroke="{{ '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') }}"
+                    stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Tríceps -->
+                {% set role = color_by_id.get('triceps') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <ellipse id="triceps" cx="46" cy="112" rx="12" ry="35" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <ellipse cx="154" cy="112" rx="12" ry="35" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Glúteos -->
+                {% set role = color_by_id.get('glutes') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <path id="glutes" d="M 70 205 L 100 215 L 75 265 L 62 248 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <path d="M 130 205 L 100 215 L 125 265 L 138 248 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Isquiotibiales -->
+                {% set role = color_by_id.get('hamstrings') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <path id="hamstrings" d="M 68 262 L 100 270 L 95 380 L 65 372 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <path d="M 132 262 L 100 270 L 105 380 L 135 372 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+
+                <!-- Gemelos Traseros -->
+                {% set role = color_by_id.get('calves-back') %}
+                {% set f_col = '#dc2626' if role == 'Principal' else ('#f59e0b' if role == 'Asistencial' else '#475569') %}
+                {% set s_col = '#7f1d1d' if role == 'Principal' else ('#92400e' if role == 'Asistencial' else '#1e293b') %}
+                <path id="calves-back" d="M 68 378 Q 80 382 85 385 L 82 460 Q 70 458 65 450 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+                <path d="M 132 378 Q 120 382 115 385 L 118 460 Q 130 458 135 450 Z" fill="{{ f_col }}" stroke="{{ s_col }}" stroke-width="0.8" filter="url(#shadow)" />
+            </svg>
+        </template>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="mt-4 flex flex-wrap justify-center gap-3 text-xs text-slate-400">
+        <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-red-500"></span> Principal</span>
+        <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-yellow-500"></span> Secundario</span>
+        <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-slate-500"></span> No trabajado</span>
+    </div>
+</section>

@@ -1,5 +1,6 @@
 # app/main.py
 from contextlib import asynccontextmanager
+from datetime import date
 from fastapi import FastAPI, Request, status
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -7,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.database import init_db
 from app.routers import fitnotes, dashboard, ejercicios
+from app.services.day_detail_service import DayDetailService
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -65,6 +67,28 @@ async def calendario_view(request: Request):
 async def ejercicios_view(request: Request):
     return templates.TemplateResponse(request, "ejercicios/list.html", context={"request": request})
 
+
+@app.get("/sesiones/{fecha}", response_class=HTMLResponse)
+async def sesion_detail_view(request: Request, fecha: date):
+    detail = DayDetailService.get_day_detail(fecha)
+    
+    # Mapeo de colores/roles para el mapa muscular SVG
+    role_priority = {"Principal": 2, "Asistencial": 1}
+    color_by_id = {}
+    
+    if detail and isinstance(detail, dict) and detail.get("muscles"):
+        for muscle in detail["muscles"]:
+            role = muscle.get("role")
+            for m_id in muscle.get("svg_ids", []):
+                if m_id not in color_by_id or role_priority.get(role, 0) > role_priority.get(color_by_id[m_id], 0):
+                    color_by_id[m_id] = role
+
+    return templates.TemplateResponse(request, "sesiones/detail.html", {
+        "request": request,
+        "fecha": str(fecha),
+        "detail": detail,
+        "color_by_id": color_by_id
+    })
 
 # Si entra en una ruta no definida, redirige a la raíz
 @app.exception_handler(status.HTTP_404_NOT_FOUND)

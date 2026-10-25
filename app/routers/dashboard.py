@@ -7,7 +7,6 @@ from fastapi import APIRouter, Query, Depends
 from fastapi.responses import HTMLResponse
 from datetime import date
 from typing import List
-from app.database import get_read_db
 from app.services.dashboard_service import DashboardService
 from app.services.calendar_service import CalendarService
 from app.services.day_detail_service import DayDetailService
@@ -118,7 +117,7 @@ async def fragment_next_workout():
     return f"""
     <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md">
         <p class="mb-1 text-xs font-medium text-slate-400">Próximo entrenamiento</p>
-        <a href="/detalle/{data['fecha']}" class="block">
+        <a href="/sesiones/{data['fecha']}" class="block">
             <h3 class="text-lg font-bold text-amber-400">{data['date_label']}</h3>
         </a>
         <div class="mt-3 space-y-4">{sessions_html}</div>
@@ -159,7 +158,7 @@ async def fragment_last_workout():
     return f"""
     <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md">
         <p class="mb-1 text-xs font-medium text-slate-400">Entrenamiento anterior</p>
-        <a href="/detalle/{data['fecha']}" class="block">
+        <a href="/sesiones/{data['fecha']}" class="block">
             <h3 class="text-lg font-bold text-emerald-400">{data['date_label']}</h3>
         </a>
         <div class="mt-3 space-y-4">{sessions_html}</div>
@@ -428,7 +427,7 @@ async def fragment_calendar(
         tooltip_text = f"Entrenos: {', '.join(workouts)}" if workouts else "Sin entrenamientos"
 
         days_html += f"""
-        <a href="/detalle/{date_str}" title="{tooltip_text}" class="group relative flex h-10 flex-col items-center justify-between rounded-lg border {border_highlight} p-1 text-xs text-slate-200 transition hover:border-blue-500/50 hover:bg-slate-700/50 {opacity_class}">
+        <a href="/sesiones/{date_str}" title="{tooltip_text}" class="group relative flex h-10 flex-col items-center justify-between rounded-lg border {border_highlight} p-1 text-xs text-slate-200 transition hover:border-blue-500/50 hover:bg-slate-700/50 {opacity_class}">
             <span class="{'text-blue-400' if is_today else ''}">{day_num}</span>
             <div class="flex items-center justify-center space-x-1">{dots_html}</div>
         </a>
