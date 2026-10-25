@@ -4,6 +4,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ---
 
+## [0.7.0] - Migración a Monolito FastAPI + Jinja2 + HTMX - 2026-10-25
+
+- **Frontend y Arquitectura:** Eliminación completa de SvelteKit y migración hacia un monolito en Python con **FastAPI**, renderizado de vistas mediante **Jinja2**, interactividad asíncrona con **HTMX** y gestión de estado ligero con **Alpine.js** (para componentes como el mapa muscular SVG), manteniendo intacta la línea estética de **Tailwind CSS**.
+- **Rutas y Endpoints de Vistas:** Consolidación de las rutas principales (`/`, `/calendario`, `/ejercicios`, `/sesiones/{fecha}`) directamente en el servidor.
+- **Optimización de Interfaz:** Implementación de fragmentos dinámicos mediante HTMX para búsquedas instantáneas en el histórico, paginación fluida de series y navegación integrada entre sesiones.
+
+---
+
 ## [0.5.x] - Correcciones menores - 2026-09-21
 
 - **General:** 0.5.8, al pulsar en la cabecera, ir al inicio. Cambiar PWA por ALS. Cambiar el nombre e icono de la aplicación
@@ -45,7 +53,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   - Endpoints REST para la búsqueda de ejercicios y recuperación del historial de progresión individual.
   - Vistas DuckDB `v_workout` optimizadas para agregar rendimiento por ejercicio.
 - **Frontend:**
-  - Vista `/historico/[ejercicio]` con soporte para la selección de ejercicios, gráficos de progresión en el tiempo y tabla detallada de repeticiones y pesos.
+  - Vista `/ejercicios/[ejercicio]` con soporte para la selección de ejercicios, gráficos de progresión en el tiempo y tabla detallada de repeticiones y pesos.
 
 ---
 
@@ -55,7 +63,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - **Backend:**
   - `GET /api/v1/dashboard/day-detail/{fecha}`: desglose de la sesión (ejercicios, series, volumen, distancia, duración) y activación muscular (principal / asistencial).
 - **Frontend:**
-  - Vista `/detalle/[fecha]` con cabecera, listado serie a serie y mapa muscular SVG (frontal / trasero).
+  - Vista `/sesiones/[fecha]` con cabecera, listado serie a serie y mapa muscular SVG (frontal / trasero).
   - Vista `/calendario` reutilizando el calendario mensual; cada día abre su detalle.
   - Enlace al histórico del ejercicio (placeholder del Módulo 5).
 

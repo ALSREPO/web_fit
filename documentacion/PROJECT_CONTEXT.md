@@ -1,8 +1,8 @@
 # 🏋️ Dashboard de Entrenamientos (FitNotes Analytics)
 
 ## 📌 Estado del Proyecto
-- **Fase Actual:** Correcciones menores antes de primer despliegue. Módulos 1, 2, 3, 4 y 5 finalizados.
-- **Metodología:** Desarrollo Modular vía Chat + SvelteKit + FastAPI + DuckDB
+- **Fase Actual:** Migración de arquitectura Frontend completada (Monolito FastAPI + Jinja2 + HTMX + Alpine.js). Correcciones menores de UI/UX y preparación para despliegue y producción.
+- **Metodología:** Desarrollo Modular vía Chat + FastAPI + Jinja2 + HTMX + DuckDB
 
 ---
 
@@ -51,77 +51,50 @@ Las siguientes funcionalidades quedan aplazadas para futuras versiones:
 ---
 
 ## 🛠️ Stack Tecnológico
-- **Frontend:** SvelteKit (Mobile-First, PWA, Tailwind CSS / componentes SVG para mapa corporal)
-  - Svelte es famoso por su sintaxis intuitiva, casi idéntica a HTML/JS nativo pero superpotente. Manipular elementos como el mapa corporal interactivo en SVG y cambiar sus colores (rojo, amarillo, gris) según los datos es absurdamente fácil en Svelte/React.
-  - Librería gráfica: Recharts o Chart.js (vienen con componentes interactivos muy limpios).
+- **Frontend y Vistas:** Jinja2 Templates + Tailwind CSS + HTMX + Alpine.js
+  - Renderizado desde el servidor con FastAPI, utilizando HTMX para actualizaciones parciales y asíncronas de la interfaz (búsquedas, paginación, filtros) y Alpine.js para la interactividad de componentes locales (como la conmutación frontal/trasera del mapa corporal SVG).
 - **Backend:** FastAPI (Python)
-  - FastAPI gestionará la lógica de parseo del CSV, la formulación de 1RM, las agrupaciones musculares y servirá los datos vía endpoints JSON documentados con OpenAPI.
+  - FastAPI gestiona toda la lógica de negocio, rutas HTML/Fragmentos, parseo del CSV, cálculos de 1RM, agrupaciones musculares y servicio de datos integrado de forma monolítica.
 - **Motor de Datos:** DuckDB (análisis en memoria / almacenamiento OLAP superrápido)
-  - Es el "SQLite del análisis de datos". Es una base de datos analítica (OLAP) ultra rápida en Python que procesa consultas SQL sobre dataframes o CSVs a velocidad luz, ideal para agregaciones de volumen y métricas por ejercicio.
+  - Base de datos analítica (OLAP) ultra rápida en Python que procesa consultas SQL sobre dataframes o CSVs a gran velocidad, ideal para agregaciones de volumen y métricas por ejercicio.
 - **Formato Origen:** CSV exportado de FitNotes
-
----
-
-## ¿Se puede hacer una App de Android a partir de esto?
-
-Sí, y es sumamente sencillo. No necesitas rehacer el código ni aprender Java/Kotlin. Hay dos formas de tenerla en tu teléfono:
-
-### Como PWA (Progressive Web App) — La opción rápida y recomendada
-
- - Añadimos un pequeño archivo de configuración (manifest.json) y un service worker a nuestro proyecto SvelteKit.
-
- - Resultado: Cuando entres desde Chrome en tu Android, te saldrá el botón "Instalar aplicación". Se creará un icono en tu pantalla de inicio, se abrirá a pantalla completa (sin la barra del navegador) y funcionará exactamente igual que cualquier app descargada de Play Store.
-
- - Dificultad: Muy baja (15-20 minutos de configuración).
-
-### Con Capacitor (Android .apk nativo)
-
- - Usamos una herramienta llamada Capacitor (desarrollada por Ionic) que envuelve tu web SvelteKit y genera un proyecto Android listo para compilar con Android Studio.
-
- - Resultado: Un archivo .apk instalable en cualquier teléfono Android que puede acceder a funciones nativas si lo necesitas.
-
- - Dificultad: Media. Se realizará una vez finalice el proyecto web.
 
 ---
 
 ## 📋 Hoja de Ruta (Roadmap por Módulos)
 
-- [x] **Módulo 1:** Estructura del proyecto (Monorepo), entorno de desarrollo y definición del esquema de datos + `PROJECT_CONTEXT.md`.
+- [x] **Módulo 1:** Estructura del proyecto, entorno de desarrollo y definición del esquema de datos + `PROJECT_CONTEXT.md`.
 
-- [x] **Módulo 2:** Base SvelteKit + Pantalla de Inicio
-    - Backend: Endpoints para Próximo entrenamiento, Último entrenamiento, Resumen general filtrable (Semana/Mes/Año/Histórico) y mini-calendario.
-    - Frontend (SvelteKit): Setup de UI (Tailwind CSS, Dark Mode, Navegación simple Mobile First) + Widgets de la Pantalla de Inicio.
+- [x] **Módulo 2:** Base FastAPI + Pantalla de Inicio
+    - Backend y Vistas: Endpoints y fragmentos HTML para Próximo entrenamiento, Último entrenamiento, Resumen general filtrable (Semana/Mes/Año/Histórico) y mini-calendario interactivo.
 
 - [x] **Módulo 3:** Pantalla de Calendario
-  - Backend: Endpoint que devuelva el estado de cada día del mes (Realizado, Planificado, Descanso) según los registros del CSV.
-  - Frontend: Vista de calendario mensual interactiva con estados de color y redirección a la fecha pulsada.
+  - Backend y Vistas: Renderizado del estado de cada día del mes (Realizado, Planificado, Descanso) según los registros del CSV con filtrado dinámico por disciplina mediante HTMX.
 
-- [x] **Módulo 4:** Pantalla de Detalle del Día
-  - Backend: Consulta del desglose de la sesión (ejercicios, series, peso, volumen) + Mapeo anatómico básico (Músculos primarios en rojo, secundarios en amarillo).
-  - Frontend: Vista `/detalle/[fecha]` con cabecera de la sesión, desglose serie por serie y componente SVG del Mapa Muscular (Frontal/Trasero).
+- [x] **Módulo 4:** Pantalla de Detalle del Día (`/sesiones/{fecha}`)
+  - Backend y Vistas: Consulta del desglose de la sesión (ejercicios, series, peso, volumen) + Mapeo anatómico (Músculos primarios en rojo, secundarios en amarillo) con soporte SVG interactivo mediante Alpine.js.
 
-- [x] **Módulo 5:** Pantalla de Histórico del Ejercicio
-  - Backend: Histórico inverso, cálculo de 1RM estimado, peso máximo registrado y puntos para la gráfica de evolución.
-  - Frontend: Vista `/historico/[ejercicio]` con métricas clave, listado cronológico y gráfica de progresión.
+- [x] **Módulo 5:** Pantalla de Histórico del Ejercicio (`/ejercicios`)
+  - Backend y Vistas: Histórico inverso, cálculo de 1RM estimado (Fórmula de Epley), peso máximo registrado y proyecciones de cardio (Fórmula de Riegel), con buscador en tiempo real y paginación mediante HTMX.
 
-- [ ] **Módulo 6:** Empaquetado PWA y Despliegue
-  - Añadir manifest.json y Service Worker en SvelteKit para instalación directa en pantalla de inicio de Android (PWA sin navegador).
+- [ ] **Módulo 6:** Despliegue y Producción
+  - Configuración de Dockerfile, volúmenes de persistencia, variables de entorno y requerimientos finales.
 
 ---
 
 ## 📋 Cosas que dejo pendientes de arreglar/modificar más adelante
-- [] **Cambiar IP y el Puerto 192.168.1.129:** en frontend/src/lib/services/client.js la IP está a fuego. Hay que cambiarla a un fichero .env
-- [x] **Pantalla Inicio:** en Siguiente y Anterior ejercicio no sale nada si hay algún ejercicio nuevo que no esté contemplado. Hay que cambiarlo
-- [x] **Pantalla Inicio:** cambiar el gráfico para que sea similar al de "Pantalla Histórico de Ejercicios"
-- [] **Pantalla Detalle del Día:** el mapa muscular es muy feo. Hay que hacerlo más estético
-- [x] **Pantalla Histórico de Ejercicios:** Se puede incluir la maratón en las estimaciones de Carrera, y los 100m en natación
-- [x] **Pantalla Histórico de Ejercicios:** Cambiar gráfico para hacer algunos indicadores de líneas, en vez de barras
-- [x] **General**, al pulsar en la cabecera, ir al inicio. Y quitar PWA
-- [x] **Pantalla principal y calendario:** cambiar color de fondo del calendario para hacerlo más claro y que quede uniforme con el resto de tarjetas
-- [x] **Pantalla principal:** resumen, que semana/mes ocupe toda la fila
-- [] **Multiusuario:** que se puedan registrar usuarios y cada uno vea sus entrenamientos
-- [] **Sistema de log dual:** que se guarde en fichero y que se muestre en consola
-- [] **Guardar y modificar los registros en una BBDD propia:** que no dependa de lo que guardo en fitnotes. Añadir la posibilidad de crear ejercicios nuevos, añadir sesiones de entrenamiento, modificar o borrar las antiguas...
-- [] **Obtener los ejercicios de garmin Connect:** relacionado con lo anterior, que se conecte a Garmin y guarde los registros en la BBDD
-- [] **BBDD - tipos de ejercicio:**, ahora los ejercicios son kg x reps, tiempo x distancia. Añadir variantes raras para paseo granjero...
-- [] **Calendario:** al pinchar sobre un tipo de ejercicio (Fuerza, Correr), en el calendario solo se deben mostrar los de ese ejercicio
+- [] **Variables de entorno (.env):** Externalizar configuraciones de red y puertos fuera del código de los servicios.
+- [x] **Pantalla Inicio:** Solucionado el manejo de ejercicios nuevos no contemplados en previsiones.
+- [x] **Pantalla Inicio:** Actualizado el gráfico de resumen al formato de líneas del histórico.
+- [] **Pantalla Detalle del Día:** Mejorar la estética visual del mapa muscular SVG.
+- [x] **Pantalla Histórico de Ejercicios:** Incluida la maratón en estimaciones de Carrera y 100m en Natación.
+- [x] **Pantalla Histórico de Ejercicios:** Adaptación de gráficos a indicadores de líneas.
+- [x] **General:** Enlace en la cabecera directo a inicio y retirada definitiva de configuraciones de PWA/Svelte.
+- [x] **Pantalla principal y calendario:** Ajuste del color de fondo del calendario para uniformidad visual.
+- [x] **Pantalla principal:** Resumen de semana/mes ocupando toda la fila.
+- [] **Multiusuario:** Registro de usuarios y aislamiento de datos de entrenamiento por perfil.
+- [] **Sistema de log dual:** Guardado en fichero y salida simultánea en consola.
+- [] **Guardar y modificar registros en BBDD propia:** Independizar el sistema de FitNotes permitiendo creación, edición y borrado directo de ejercicios y sesiones.
+- [] **Integración Garmin Connect:** Sincronización automática de actividades con la base de datos local.
+- [] **BBDD - Tipos de ejercicio:** Soporte para variantes complejas (ej. paseo granjero, métricas mixtas).
+- [] **Calendario:** Filtrado interactivo por disciplina al pinchar directamente sobre el tipo de ejercicio.
