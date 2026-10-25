@@ -1,6 +1,7 @@
 # app/main.py
 from contextlib import asynccontextmanager
 from datetime import date
+from pathlib import Path
 from fastapi import FastAPI, Request, status
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -16,20 +17,22 @@ async def lifespan(app: FastAPI):
     init_db()
     yield
 
+# Directorio base absoluto del paquete app/
+BASE_DIR = Path(__file__).resolve().parent
 
 ###########################################################
 # Inicializamos la aplicación FastAPI
 app = FastAPI(
     title="Diario De Hierro",
-    version="0.7.0",
+    version="1.0.0",
     description="Análisis de entrenamientos",
     lifespan=lifespan
 )
 
 
 ###########################################################
-# Configuramos el manejo de archivos estáticos (CSS, JS y vídeos)
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# Configuramos el manejo de archivos estáticos de forma absoluta
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 
 ###########################################################
@@ -44,18 +47,14 @@ async def health_check():
     return {"status": "ok", "message": "Diario De Hierro activo"}
 
 
-# Configurar el directorio de plantillas Jinja2
-templates = Jinja2Templates(directory="app/templates")
+# Configurar el directorio de plantillas Jinja2 de forma absoluta
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 # Ruta raíz para evitar el bucle 404
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-  # Si aún no tienes el index.html creado, puedes devolver un texto plano temporalmente:
-  #return "<h1>Diario de Hierro - Backend Activo</h1>"
-
-  # O renderizar tu plantilla de Jinja2 cuando la tengas lista:
-  return templates.TemplateResponse(request, "index.html", context={"request": request})
+    return templates.TemplateResponse(request, "index.html", context={"request": request})
 
 
 @app.get("/calendario", response_class=HTMLResponse)
@@ -116,5 +115,4 @@ async def custom_404_handler(request: Request, __):
 
 if __name__ == "__main__":
     import uvicorn
-    # Cambiado a 0.0.0.0 para que escuche fuera del contenedor si lo corres directo
     uvicorn.run("app.main:app", host="0.0.0.0", port=8888, reload=True)
