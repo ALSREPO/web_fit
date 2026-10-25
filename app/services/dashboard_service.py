@@ -163,7 +163,7 @@ class DashboardService:
                     label_str = DashboardService.MESES_ESP[dt.month - 1]
                     timeframe_list.append((key, label_str))
 
-            elif period in ["all", "historico"]:
+            elif period in ["all", "ejercicios"]:
                 where_clause = ""
                 params = []
 
@@ -208,7 +208,7 @@ class DashboardService:
                 group_by = "STRFTIME('%Y-%m-%d', fecha)"
             elif period in ["year", "12m"]:
                 group_by = "STRFTIME('%Y-%m', fecha)"
-            else:  # all / historico
+            else:  # all / ejercicios
                 group_by = "STRFTIME('%Y', fecha)"
 
             query_time = f"""

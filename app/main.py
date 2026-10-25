@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.database import init_db
-from app.routers import fitnotes, dashboard
+from app.routers import fitnotes, dashboard, ejercicios
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,6 +34,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # Cargamos los routers
 app.include_router(fitnotes.router)
 app.include_router(dashboard.router)
+app.include_router(ejercicios.router)
 
 
 @app.get("/api/health")
@@ -58,6 +59,11 @@ async def home(request: Request):
 @app.get("/calendario", response_class=HTMLResponse)
 async def calendario_view(request: Request):
     return templates.TemplateResponse(request, "calendario.html", context={"request": request})
+
+
+@app.get("/ejercicios", response_class=HTMLResponse)
+async def ejercicios_view(request: Request):
+    return templates.TemplateResponse(request, "ejercicios/list.html", context={"request": request})
 
 
 # Si entra en una ruta no definida, redirige a la raíz

@@ -1,0 +1,30 @@
+{% if exercises|length == 0 %}
+    <div class="rounded-2xl border border-slate-700/40 bg-slate-800/40 p-8 text-center text-xs text-slate-400">
+        No se encontraron ejercicios con ese término.
+    </div>
+{% else %}
+    <div class="space-y-2">
+        {% for ex in exercises %}
+            <a href="/ejercicios/{{ ex.nombre | urlencode }}"
+                class="group flex w-full items-center justify-between rounded-xl border border-slate-700/60 bg-slate-800/90 p-4 text-left transition-all hover:border-blue-500/60 hover:bg-slate-800"
+            >
+                <div class="flex items-center gap-3">
+                    <span class="font-semibold text-slate-200 group-hover:text-blue-400 transition-colors">
+                        {{ ex.nombre }}
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-2 text-xs text-slate-400">
+                    {% if ex.recent_volume > 0 %}
+                        <span class="font-mono">{{ "{:,.0f}".format(ex.recent_volume).replace(',', '.') }} kg (3M)</span>
+                    {% else %}
+                        <span class="text-slate-500">Sin registros recientes</span>
+                    {% endif %}
+                    <svg class="h-4 w-4 text-slate-500 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}

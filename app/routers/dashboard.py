@@ -102,7 +102,7 @@ async def fragment_next_workout():
             <li class="flex items-start gap-2.5">
                 <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500"></span>
                 <div class="flex flex-col">
-                    <a href="/historico/{ex['ejercicio']}" class="font-medium text-slate-200 hover:text-blue-300">{ex['ejercicio']}</a>
+                    <a href="/ejercicios/{ex['ejercicio']}" class="font-medium text-slate-200 hover:text-blue-300">{ex['ejercicio']}</a>
                     <span class="font-mono text-xs text-slate-400">{ex['detalle']}</span>
                 </div>
             </li>
@@ -143,7 +143,7 @@ async def fragment_last_workout():
             <li class="flex items-start gap-2.5">
                 <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500"></span>
                 <div class="flex flex-col">
-                    <a href="/historico/{ex['ejercicio']}" class="font-medium text-slate-200 hover:text-blue-300">{ex['ejercicio']}</a>
+                    <a href="/ejercicios/{ex['ejercicio']}" class="font-medium text-slate-200 hover:text-blue-300">{ex['ejercicio']}</a>
                     <span class="font-mono text-xs text-slate-400">{ex['detalle']}</span>
                 </div>
             </li>
