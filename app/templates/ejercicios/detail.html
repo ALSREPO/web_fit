@@ -34,55 +34,8 @@
         </div>
     </header>
 
-    <!-- Tarjetas de Estadísticas (Fuerza o Cardio) -->
-    {% if not stats.has_recent_data %}
-        <div class="rounded-2xl border border-amber-900/50 bg-amber-950/30 p-4 text-amber-200">
-            <p class="text-xs font-semibold uppercase tracking-wider text-amber-400">Sin registros recientes</p>
-            <p class="mt-1 text-sm text-slate-300">No has realizado este ejercicio en los últimos 3 meses.</p>
-        </div>
-    {% elif stats.is_cardio and stats.cardio_projections %}
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-3">
-                <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 text-center shadow-md">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Mejor Ritmo (3M)</span>
-                    <p class="mt-1 font-mono text-xl font-bold text-emerald-400">
-                        {{ stats.cardio_projections.best_pace or 'N/A' }} <span class="text-xs font-normal text-slate-300">{{ stats.cardio_projections.pace_label }}</span>
-                    </p>
-                    <p class="mt-0.5 text-xs text-slate-400">Ritmo Medio</p>
-                </div>
-
-                <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 text-center shadow-md">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Estimado {{ stats.cardio_projections.target_1_label }}</span>
-                    <p class="mt-1 font-mono text-xl font-bold text-blue-400">
-                        {{ stats.cardio_projections.target_1_time }}
-                    </p>
-                    <p class="mt-0.5 text-xs text-slate-400">Fórmula Riegel</p>
-                </div>
-            </div>
-        </div>
-    {% elif stats.max_weight or stats.estimated_1rm %}
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-3">
-                <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 text-center shadow-md">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Máximo (3M)</span>
-                    <p class="mt-1 font-mono text-xl font-bold text-emerald-400">
-                        {{ stats.max_weight }} <span class="text-xs font-normal text-slate-300">{{ stats.weight_unit or 'kg' }}</span>
-                    </p>
-                    {% if stats.reps_at_max %}
-                        <p class="mt-0.5 text-xs text-slate-400">{{ stats.reps_at_max }} reps</p>
-                    {% endif %}
-                </div>
-
-                <div class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 text-center shadow-md">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">1RM Estimado</span>
-                    <p class="mt-1 font-mono text-xl font-bold text-blue-400">
-                        {{ stats.estimated_1rm }} <span class="text-xs font-normal text-slate-300">{{ stats.weight_unit or 'kg' }}</span>
-                    </p>
-                    <p class="mt-0.5 text-xs text-slate-400">Fórmula Epley</p>
-                </div>
-            </div>
-        </div>
-    {% endif %}
+    <!-- Tarjetas de Estadísticas (Fuerza o Cardio con proyecciones) -->
+    {% include "ejercicios/partials/stats_cards.html" %}
 
     <!-- Sección Histórico de Sesiones -->
     <section class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-4 shadow-md">
