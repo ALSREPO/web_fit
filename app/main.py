@@ -71,8 +71,22 @@ async def ejercicios_view(request: Request):
 @app.get("/sesiones/{fecha}", response_class=HTMLResponse)
 async def sesion_detail_view(request: Request, fecha: date):
     detail = DayDetailService.get_day_detail(fecha)
+    adjacent_dates = DayDetailService.get_adjacent_workout_dates(fecha)
     
-    # Mapeo de colores/roles para el mapa muscular SVG
+    has_strength = False
+    has_cardio = False
+    if detail and isinstance(detail, dict) and detail.get("sessions"):
+        for s in detail["sessions"]:
+            tipo = s.get("tipo_ejercicio", "").lower()
+            if any(k in tipo for k in ['carrera', 'nataci', 'ciclismo', 'running', 'cycling', 'swimming']):
+                has_cardio = True
+            else:
+                has_strength = True
+
+    show_duration = has_cardio or (has_strength and has_cardio)
+    show_volume = has_strength or (has_strength and has_cardio)
+    show_distance = has_cardio or (has_strength and has_cardio)
+
     role_priority = {"Principal": 2, "Asistencial": 1}
     color_by_id = {}
     
@@ -87,7 +101,12 @@ async def sesion_detail_view(request: Request, fecha: date):
         "request": request,
         "fecha": str(fecha),
         "detail": detail,
-        "color_by_id": color_by_id
+        "color_by_id": color_by_id,
+        "show_duration": show_duration,
+        "show_volume": show_volume,
+        "show_distance": show_distance,
+        "prev_fecha": adjacent_dates["prev_fecha"],
+        "next_fecha": adjacent_dates["next_fecha"]
     })
 
 # Si entra en una ruta no definida, redirige a la raíz

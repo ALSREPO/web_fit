@@ -4,22 +4,54 @@
 
 {% block content %}
 <div class="space-y-4">
-    <!-- Volver al Calendario -->
-    <a href="/calendario" class="inline-flex items-center text-xs font-medium text-blue-400 hover:text-blue-300">
-        ← Calendario
-    </a>
+    <!-- Cabecera con Métricas del Día y Navegación Integrada -->
+    <header class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md space-y-4">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <a href="/calendario" class="inline-flex items-center text-xs font-medium text-blue-400 hover:text-blue-300 mb-2">
+                    ← Calendario
+                </a>
+                <p class="text-xs font-medium text-slate-400">Detalle del día</p>
+                <h2 class="mt-1 text-xl font-bold text-white">{{ detail.date_label or fecha }}</h2>
+            </div>
 
-    <!-- Cabecera con Métricas del Día -->
-    <header class="rounded-2xl border border-slate-700/60 bg-slate-800/90 p-5 shadow-md">
-        <p class="text-xs font-medium text-slate-400">Detalle del día</p>
-        <h2 class="mt-1 text-xl font-bold text-white">{{ detail.date_label or fecha }}</h2>
+            <!-- Botones de Navegación Integrados -->
+            <div class="flex items-center gap-1.5 self-center">
+                {% if prev_fecha %}
+                    <a href="/sesiones/{{ prev_fecha }}" title="Entrenamiento anterior" class="rounded-xl border border-slate-700/60 bg-slate-900/60 p-2 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition flex items-center gap-1">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        <span class="hidden sm:inline">Anterior</span>
+                    </a>
+                {% else %}
+                    <span class="rounded-xl border border-slate-800 bg-slate-950/40 p-2 text-xs font-medium text-slate-600 cursor-not-allowed flex items-center gap-1 opacity-50" title="No hay entrenamientos anteriores">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        <span class="hidden sm:inline">Anterior</span>
+                    </span>
+                {% endif %}
+
+                {% if next_fecha %}
+                    <a href="/sesiones/{{ next_fecha }}" title="Entrenamiento siguiente" class="rounded-xl border border-slate-700/60 bg-slate-900/60 p-2 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition flex items-center gap-1">
+                        <span class="hidden sm:inline">Siguiente</span>
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                {% else %}
+                    <span class="rounded-xl border border-slate-800 bg-slate-950/40 p-2 text-xs font-medium text-slate-600 cursor-not-allowed flex items-center gap-1 opacity-50" title="No hay entrenamientos posteriores">
+                        <span class="hidden sm:inline">Siguiente</span>
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </span>
+                {% endif %}
+            </div>
+        </div>
 
         {% if detail.has_workout %}
-            <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+            <div class="grid {% if show_duration and show_volume and show_distance %}grid-cols-3{% elif show_volume and not show_duration %}grid-cols-1{% else %}grid-cols-2{% endif %} gap-2 text-center">
+                {% if show_duration %}
                 <div class="rounded-xl bg-slate-900/70 px-2 py-3">
                     <p class="text-[10px] uppercase tracking-wide text-slate-500">Duración</p>
                     <p class="mt-1 text-sm font-semibold text-slate-100">{{ detail.duration_label or '—' }}</p>
                 </div>
+                {% endif %}
+                {% if show_volume %}
                 <div class="rounded-xl bg-slate-900/70 px-2 py-3">
                     <p class="text-[10px] uppercase tracking-wide text-slate-500">Volumen</p>
                     <p class="mt-1 text-sm font-semibold text-slate-100">
@@ -30,6 +62,8 @@
                         {% endif %}
                     </p>
                 </div>
+                {% endif %}
+                {% if show_distance %}
                 <div class="rounded-xl bg-slate-900/70 px-2 py-3">
                     <p class="text-[10px] uppercase tracking-wide text-slate-500">Distancia</p>
                     <p class="mt-1 text-sm font-semibold text-slate-100">
@@ -40,9 +74,10 @@
                         {% endif %}
                     </p>
                 </div>
+                {% endif %}
             </div>
         {% else %}
-            <p class="mt-3 text-sm text-slate-400">Día de descanso. No hay sesión registrada.</p>
+            <p class="text-sm text-slate-400">Día de descanso. No hay sesión registrada.</p>
         {% endif %}
     </header>
 

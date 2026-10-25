@@ -247,3 +247,23 @@ class DayDetailService:
             }
         finally:
             conn.close()
+
+    @staticmethod
+    def get_adjacent_workout_dates(target_date: date):
+        """Obtiene la fecha del entrenamiento anterior y siguiente con datos."""
+        conn = connect(str(DB_PATH), read_only=True)
+        try:
+            prev_row = conn.execute("""
+                SELECT MAX(fecha) FROM v_resumen_diario WHERE fecha < ?
+            """, [target_date]).fetchone()
+            
+            next_row = conn.execute("""
+                SELECT MIN(fecha) FROM v_resumen_diario WHERE fecha > ?
+            """, [target_date]).fetchone()
+            
+            return {
+                "prev_fecha": prev_row[0] if prev_row and prev_row[0] else None,
+                "next_fecha": next_row[0] if next_row and next_row[0] else None
+            }
+        finally:
+            conn.close()
