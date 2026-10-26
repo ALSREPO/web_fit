@@ -3,6 +3,7 @@ from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from app.services.exercise_service import ExerciseService
+from app.config import ENTORNO
 
 router = APIRouter(prefix="/ejercicios", tags=["Ejercicios"])
 templates = Jinja2Templates(directory="app/templates")
@@ -17,9 +18,9 @@ async def ejercicios_list_view(request: Request, q: str = Query("")):
 
     # Si la petición viene de HTMX (desde el buscador), devolvemos solo el fragmento de la lista
     if request.headers.get("HX-Request"):
-        return templates.TemplateResponse(request, "ejercicios/partials/exercise_list.html", {"request": request, "exercises": exercises})
+        return templates.TemplateResponse(request, "ejercicios/partials/exercise_list.html", {"request": request, "exercises": exercises, "entorno": ENTORNO.upper()})
 
-    return templates.TemplateResponse(request, "ejercicios/list.html", {"request": request, "exercises": exercises, "search_query": q})
+    return templates.TemplateResponse(request, "ejercicios/list.html", {"request": request, "exercises": exercises, "search_query": q, "entorno": ENTORNO.upper()})
 
 @router.get("/{ejercicio}", response_class=HTMLResponse)
 async def ejercicio_detail_view(request: Request, ejercicio: str):
@@ -38,7 +39,8 @@ async def ejercicio_detail_view(request: Request, ejercicio: str):
         "history": history,
         "has_more": has_more,
         "next_offset": 10,
-        "exercisesList": all_exercises
+        "exercisesList": all_exercises,
+        "entorno": ENTORNO.upper()
     })
 
 @router.get("/{ejercicio}/more", response_class=HTMLResponse)
@@ -54,5 +56,6 @@ async def ejercicio_more_sessions(request: Request, ejercicio: str, offset: int 
         "history": history,
         "next_offset": offset + limit,
         "has_more": has_more,
-        "ejercicio": ejercicio
+        "ejercicio": ejercicio,
+        "entorno": ENTORNO.upper()
     })
