@@ -19,3 +19,7 @@ UPLOAD_DIR = ROOT_DIR / "data" / "uploads" # común a todos los entornos
 # Asegurar que la carpeta de datos del entorno actual exista físicamente
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+# Leer las variables de .env
+ADMIN_USER = os.getenv("ADMIN_USER", "ALS")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ALS")

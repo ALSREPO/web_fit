@@ -2,7 +2,7 @@
 from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -11,6 +11,7 @@ from app.database import init_db
 from app.routers import fitnotes, dashboard, ejercicios
 from app.services.day_detail_service import DayDetailService
 from app.config import ENTORNO
+from app.core.security import verify_admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # Inicializamos la aplicación FastAPI
 app = FastAPI(
     title="Diario De Hierro",
-    version="1.0.3",
+    version="1.1.0",
     description="Análisis de entrenamientos",
     lifespan=lifespan
 )
@@ -187,6 +188,11 @@ async def sesion_detail_view(request: Request, fecha: date):
         "next_fecha": adjacent_dates["next_fecha"],
         "entorno": ENTORNO.upper()
     })
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_panel(request: Request, username: str = Depends(verify_admin)):
+    return templates.TemplateResponse(request, "admin.html", {"request": request, "entorno": ENTORNO.upper()})
+
 
 # Si entra en una ruta no definida, redirige a la raíz
 @app.exception_handler(status.HTTP_404_NOT_FOUND)

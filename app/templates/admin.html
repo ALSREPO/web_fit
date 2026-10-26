@@ -1,0 +1,39 @@
+<!-- app/templates/admin.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Calendario - Diario de Hierro{% endblock %}
+
+{% block content %}
+    <main class="max-w-md mx-auto w-full space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+            <h1 class="text-xl font-bold text-white">Panel de Administración</h1>
+            <a href="/" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">Volver a la App</a>
+        </div>
+
+        <!-- Tarjeta 1: Subir Fichero CSV -->
+        <section class="rounded-2xl border border-slate-700/60 bg-slate-900/90 p-5 space-y-4 shadow-md">
+            <h2 class="font-semibold text-slate-200">1. Subir nuevo CSV</h2>
+            <form hx-encoding="multipart/form-data" hx-post="/api/v1/fitnotes/upload-csv" hx-target="#upload-result" class="space-y-3">
+                <input type="file" name="file" accept=".csv" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"/>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-xl transition-colors text-sm">Subir al servidor</button>
+            </form>
+            <div id="upload-result" class="text-xs font-mono text-slate-300 bg-slate-950 p-3 rounded-xl overflow-x-auto break-all border border-slate-800"></div>
+        </section>
+
+        <!-- Tarjeta 2: Procesar e Importar -->
+        <section class="rounded-2xl border border-slate-700/60 bg-slate-900/90 p-5 space-y-4 shadow-md">
+            <h2 class="font-semibold text-slate-200">2. Importar datos a la BBDD</h2>
+            <p class="text-xs text-slate-400">Procesa el último archivo CSV subido y vuelca los datos.</p>
+            <button hx-post="/api/v1/fitnotes/import-data" hx-target="#import-result" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-xl transition-colors text-sm">Procesar e Importar</button>
+            <div id="import-result" class="text-xs font-mono text-slate-300 bg-slate-950 p-3 rounded-xl overflow-x-auto break-all border border-slate-800"></div>
+        </section>
+
+        <!-- Tarjeta 3: Limpieza -->
+        <section class="rounded-2xl border border-slate-700/60 bg-slate-900/90 p-5 space-y-4 shadow-md">
+            <h2 class="font-semibold text-slate-200">3. Mantenimiento</h2>
+            <button hx-delete="/api/v1/fitnotes/clean-old-csvs" hx-target="#clean-result" class="w-full bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/60 font-medium py-2.5 rounded-xl transition-colors text-sm">Eliminar CSVs antiguos</button>
+            <div id="clean-result" class="text-xs font-mono text-slate-300 bg-slate-950 p-3 rounded-xl overflow-x-auto break-all border border-slate-800"></div>
+        </section>
+    </main>
+{% endblock %}
