@@ -8,6 +8,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import logging
 from starlette.middleware.base import BaseHTTPMiddleware
+import sys
+import os
 
 from app.database import init_db
 from app.routers import fitnotes, dashboard, ejercicios
@@ -15,6 +17,10 @@ from app.services.day_detail_service import DayDetailService
 from app.config import ENTORNO
 from app.core.security import verify_admin
 from app.utils.logging_config import configurar_logs, client_ip_ctx  # Importamos el módulo de logs
+
+# Forzamos a Python a mirar en la raíz del proyecto para encontrar 'database'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from database.init_db import inicializar_base_de_datos
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
