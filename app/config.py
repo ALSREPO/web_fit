@@ -23,3 +23,9 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 # Leer las variables de .env
 ADMIN_USER = os.getenv("ADMIN_USER", "ALS")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ALS")
+
+# Configuración del nivel de logs (Dinámica)
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+LOG_TAMANO_FICHERO = int(os.environ.get("LOG_TAMANO_FICHERO", 5))
+LOG_NUM_FICHEROS_RESPALDO = int(os.environ.get("LOG_NUM_FICHEROS_RESPALDO", 3))
+LOG_FILE_PATH = os.environ.get("LOG_FILE_PATH", "logs/diario_hierro_ejecucion.log")

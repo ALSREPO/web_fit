@@ -6,12 +6,15 @@ from fastapi import FastAPI, Request, status, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import logging
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.database import init_db
 from app.routers import fitnotes, dashboard, ejercicios
 from app.services.day_detail_service import DayDetailService
 from app.config import ENTORNO
 from app.core.security import verify_admin
+from app.utils.logging_config import configurar_logs, client_ip_ctx  # Importamos el módulo de logs
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,6 +38,36 @@ app = FastAPI(
 ###########################################################
 # Configuramos el manejo de archivos estáticos de forma absoluta
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
+
+###########################################################
+# Configurar el sistema de logs global
+from app.config import LOG_LEVEL
+
+configurar_logs(LOG_LEVEL)
+logger = logging.getLogger(f"DIARIO_HIERRO {ENTORNO}")
+
+# 2. El Middleware se queda aquí porque necesita interactuar con la 'app'
+class LogIPMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Capturamos la IP real (Cloudflare -> Docker)
+        ip_real = request.headers.get("cf-connecting-ip") or request.headers.get("x-forwarded-for")
+        if not ip_real and request.client:
+            ip_real = request.client.host
+        else:
+            ip_real = ip_real.split(",")[0].strip() if ip_real else "IP desconocida"
+            
+        # Seteamos la IP en el contexto antes de procesar la petición
+        token = client_ip_ctx.set(ip_real)
+        try:
+            response = await call_next(request)
+            return response
+        finally:
+            client_ip_ctx.reset(token)
+
+app.add_middleware(LogIPMiddleware)
+
+logger.info('Iniciando la aplicación Diario de Hierro')   
 
 
 ###########################################################

@@ -4,6 +4,25 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ---
 
+## [1.2.0] - Sistema de log - 2026-10-27
+
+- **Logging:** Implementación de un sistema de log para registrar eventos y errores en la aplicación.
+- **Visualización y guardado de logs:** Los logs se muestran en el terminar y además se guardan en un archivo .log
+
+---
+
+## [1.1.0] - Administración de csv desde web - 2026-10-26
+
+- **Ventana de Administración:** permite subir y eliminar archivos csv de FitNotes desde la web. Y recargar la BBDD. 
+
+---
+
+## [1.0.0] - Primera Versión funcional de la aplicación 2026-10-26
+
+- **Instalación PWA:** Permite la instalación de la aplicación como PWA en dispositivos móviles y escritorio, con soporte offline básico. 
+
+---
+
 ## [0.7.0] - Migración a Monolito FastAPI + Jinja2 + HTMX - 2026-10-25
 
 - **Frontend y Arquitectura:** Eliminación completa de SvelteKit y migración hacia un monolito en Python con **FastAPI**, renderizado de vistas mediante **Jinja2**, interactividad asíncrona con **HTMX** y gestión de estado ligero con **Alpine.js** (para componentes como el mapa muscular SVG), manteniendo intacta la línea estética de **Tailwind CSS**.

@@ -1,7 +1,7 @@
 # 🏋️ Dashboard de Entrenamientos (FitNotes Analytics)
 
 ## 📌 Estado del Proyecto
-- **Fase Actual:** Migración de arquitectura Frontend completada (Monolito FastAPI + Jinja2 + HTMX + Alpine.js). Correcciones menores de UI/UX y preparación para despliegue y producción.
+- **Fase Actual:** Migración de arquitectura Frontend completada (Monolito FastAPI + Jinja2 + HTMX + Alpine.js). Primera versión funcional en producción. Se implementará una nueva arquitectura para migrar la BBDD a mysql y poder gestionar múltiples usuarios y sesiones de entrenamiento.
 - **Metodología:** Desarrollo Modular vía Chat + FastAPI + Jinja2 + HTMX + DuckDB
 
 ---
@@ -77,13 +77,16 @@ Las siguientes funcionalidades quedan aplazadas para futuras versiones:
 - [x] **Módulo 5:** Pantalla de Histórico del Ejercicio (`/ejercicios`)
   - Backend y Vistas: Histórico inverso, cálculo de 1RM estimado (Fórmula de Epley), peso máximo registrado y proyecciones de cardio (Fórmula de Riegel), con buscador en tiempo real y paginación mediante HTMX.
 
-- [ ] **Módulo 6:** Despliegue y Producción
+- [x] **Módulo 6:** Despliegue y Producción
   - Configuración de Dockerfile, volúmenes de persistencia, variables de entorno y requerimientos finales.
+
+- [] **Fase 2:** Multiusuario y BBDD propia
+  - Backend y Vistas: Registro de usuarios, aislamiento de datos por perfil, creación/edición/borrado de ejercicios y sesiones.
 
 ---
 
 ## 📋 Cosas que dejo pendientes de arreglar/modificar más adelante
-- [] **Variables de entorno (.env):** Externalizar configuraciones de red y puertos fuera del código de los servicios.
+- [x] **Variables de entorno (.env):** Externalizar configuraciones de red y puertos fuera del código de los servicios.
 - [x] **Pantalla Inicio:** Solucionado el manejo de ejercicios nuevos no contemplados en previsiones.
 - [x] **Pantalla Inicio:** Actualizado el gráfico de resumen al formato de líneas del histórico.
 - [] **Pantalla Detalle del Día:** Mejorar la estética visual del mapa muscular SVG.
@@ -97,4 +100,4 @@ Las siguientes funcionalidades quedan aplazadas para futuras versiones:
 - [] **Guardar y modificar registros en BBDD propia:** Independizar el sistema de FitNotes permitiendo creación, edición y borrado directo de ejercicios y sesiones.
 - [] **Integración Garmin Connect:** Sincronización automática de actividades con la base de datos local.
 - [] **BBDD - Tipos de ejercicio:** Soporte para variantes complejas (ej. paseo granjero, métricas mixtas).
-- [] **Calendario:** Filtrado interactivo por disciplina al pinchar directamente sobre el tipo de ejercicio.
+- [x] **Calendario:** Filtrado interactivo por disciplina al pinchar directamente sobre el tipo de ejercicio.
