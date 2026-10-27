@@ -7,6 +7,9 @@ import json
 from pathlib import Path
 from contextlib import contextmanager
 from app.config import DATA_DIR, ROOT_DIR
+import logging 
+
+logger = logging.getLogger("DUCKDB")
 
 DB_PATH = DATA_DIR / "fitnotes.duckdb"
 seed_file = ROOT_DIR / "data" / "exercises_seed.json"
@@ -15,6 +18,7 @@ def get_write_db():
     """Generador de conexiones optimizado para FastAPI (Inyección con Depends).
     """
     conn = duckdb.connect(str(DB_PATH), read_only=False)
+    logger.info("Abierta conexión de escritura")
     try:
         yield conn
     finally:
@@ -25,6 +29,7 @@ def get_read_db():
     Se abre en modo lectura por defecto para máxima velocidad y seguridad.
     """
     conn = duckdb.connect(str(DB_PATH), read_only=True)
+    logger.info("Abierta conexión de lectura")
     try:
         yield conn
     finally:
@@ -33,6 +38,7 @@ def get_read_db():
 
 def init_db():
     """Inicializa la secuencia y la tabla 'workout_logs' si no existen."""
+    logger.info("Inicio recarga BBDD Duckdb")
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = duckdb.connect(str(DB_PATH))
 
@@ -94,6 +100,8 @@ def init_db():
                     INSERT INTO muscle_svg_mapping (muscle_name, svg_ids)
                     VALUES (?, ?)
                 """, data["muscle_svg"])
+        else:
+            logger.warning(f"No existe fichero {seed_file}")
         
         
         # 6. Crea las vistas para consultas de logs completos y sesiones
@@ -194,6 +202,7 @@ def init_db():
                 , W.ejercicio
             order by O.min_id;
         """)
+        logger.info("Fin recarga BBDD Duckdb")
     finally:
         conn.close()
 

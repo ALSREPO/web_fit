@@ -8,6 +8,9 @@ from app.services.csv_service import CSVService
 from app.models.fitnotes import CSVUploadResponse
 
 from app.config import UPLOAD_DIR
+import logging 
+
+logger = logging.getLogger("FITNOTES")
 
 router = APIRouter(
     prefix="/api/v1/fitnotes",
@@ -23,7 +26,9 @@ async def upload_csv(file: UploadFile = File(...)):
     destination_path = UPLOAD_DIR / file.filename
     with destination_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-        
+    
+    logger.info(f"Fichero csv subido: {file.filename}")
+
     return {
         "filename": file.filename,
         "saved_path": str(destination_path),
@@ -39,16 +44,19 @@ async def import_data(filename: Optional[str] = Query(None, description="Nombre 
         file_to_import = CSVService.get_latest_csv_file(UPLOAD_DIR)
         
     if not file_to_import or not file_to_import.exists():
+        logger.warning(f"No se encontró ningún archivo CSV para importar")
         raise HTTPException(status_code=404, detail="No se encontró ningún archivo CSV para importar.")
         
     try:
         records_count = CSVService.parse_and_store_csv(file_to_import)
+        logger.info(f"Datos procesados e importados correctamente en DuckDB")
         return CSVUploadResponse(
             filename=file_to_import.name,
             total_records=records_count,
             message="Datos procesados e importados correctamente en DuckDB."
         )
     except Exception as e:
+        logger.error(f"Error durante la importación: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error durante la importación: {str(e)}")
 
 # 3. Endpoint: Consultar registros
@@ -61,6 +69,8 @@ async def get_records(limit: int = 100):
 async def clean_old_csvs():
     try:
         result = CSVService.delete_old_csv_files(UPLOAD_DIR)
+        logger.info(f"Ficheros csv antiguos borrados")
         return result
     except Exception as e:
+        logger.error(f"Error al limpiar csv antiguos: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error al limpiar archivos antiguos: {str(e)}")
