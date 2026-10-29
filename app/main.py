@@ -12,7 +12,7 @@ import sys
 import os
 
 from app.database import init_db
-from app.routers import fitnotes, dashboard, ejercicios
+from app.routers import fitnotes, dashboard, ejercicios, login
 from app.services.day_detail_service import DayDetailService
 from app.config import ENTORNO
 from app.core.security import verify_admin
@@ -81,6 +81,7 @@ logger.info('Iniciando la aplicación Diario de Hierro')
 app.include_router(fitnotes.router)
 app.include_router(dashboard.router)
 app.include_router(ejercicios.router)
+app.include_router(login.router)
 
 @app.get("/favicon.svg")
 async def get_favicon():

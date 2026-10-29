@@ -46,3 +46,8 @@ db_config_editor = {
     "database": os.environ.get("DB_NAME", "database_defecto"),
     "port": int(os.environ.get("DB_PORT", 3306)),
 }
+
+# Configuración del token (JWT) para login
+SECRET_KEY = os.environ.get("SECRET_KEY")
+ALGORITHM = os.environ.get("ALGORITHM", "HS256")
+ACCESS_TOKEN_COOKIE_MAX_AGE = int(os.environ.get("ACCESS_TOKEN_COOKIE_MAX_AGE", 60))
