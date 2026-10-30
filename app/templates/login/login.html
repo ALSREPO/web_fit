@@ -1,0 +1,69 @@
+<!-- app/templates/login/login.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión - Diario de Hierro{% endblock %}
+
+{% block content %}
+<main class="max-w-md mx-auto w-full space-y-6 pt-6">
+    <div class="text-center space-y-2 border-b border-slate-800 pb-4">
+        <h1 class="text-2xl font-bold text-white">Iniciar Sesión</h1>
+        <p class="text-xs text-slate-400">Introduce tus credenciales para acceder a tu diario</p>
+    </div>
+
+    <section class="rounded-2xl border border-slate-700/60 bg-slate-900/90 p-6 space-y-4 shadow-md">
+        <form id="login-form" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Correo electrónico</label>
+                <input type="email" name="email" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Contraseña</label>
+                <input type="password" name="password" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-blue-500">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-xl transition-colors text-sm shadow-lg shadow-blue-900/20">
+                Entrar
+            </button>
+        </form>
+
+        <div id="login-error" class="text-xs font-mono text-rose-400 bg-rose-950/40 border border-rose-900/50 p-3 rounded-xl hidden"></div>
+
+        <div class="text-center pt-2 border-t border-slate-800/80">
+            <p class="text-xs text-slate-400">¿No tienes cuenta? <a href="/registro" class="text-blue-400 hover:underline font-medium">Regístrate aquí</a></p>
+        </div>
+    </section>
+</main>
+
+<script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        const errorDiv = document.getElementById('login-error');
+
+        errorDiv.classList.add('hidden');
+        errorDiv.textContent = '';
+
+        try {
+            const response = await fetch('/api/login/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                window.location.href = result.redirect || '/';
+            } else {
+                errorDiv.textContent = result.detail || 'Error al iniciar sesión.';
+                errorDiv.classList.remove('hidden');
+            }
+        } catch (err) {
+            errorDiv.textContent = 'Error de conexión con el servidor.';
+            errorDiv.classList.remove('hidden');
+        }
+    });
+</script>
+{% endblock %}

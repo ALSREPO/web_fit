@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Registro - Diario de Hierro{% endblock %}
+
+{% block content %}
+<main class="max-w-md mx-auto w-full space-y-6 pt-6">
+    <div class="text-center space-y-2 border-b border-slate-800 pb-4">
+        <h1 class="text-2xl font-bold text-white">Crear Cuenta</h1>
+        <p class="text-xs text-slate-400">Regístrate para empezar a registrar tus entrenamientos</p>
+    </div>
+
+    <section class="rounded-2xl border border-slate-700/60 bg-slate-900/90 p-6 space-y-4 shadow-md">
+        <form id="registro-form" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Nombre</label>
+                <input type="text" name="nombre" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Correo electrónico <span class="text-slate-500">(Opcional)</span></label>
+                <input type="email" name="email" placeholder="Se asignará valor por defecto si se deja vacío" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Contraseña</label>
+                <input type="password" name="password" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-blue-500">
+            </div>
+
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-xl transition-colors text-sm shadow-lg shadow-emerald-900/20">
+                Registrarse
+            </button>
+        </form>
+
+        <div id="registro-result" class="text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-900/50 p-3 rounded-xl hidden"></div>
+        <div id="registro-error" class="text-xs font-mono text-rose-400 bg-rose-950/40 border border-rose-900/50 p-3 rounded-xl hidden"></div>
+
+        <div class="text-center pt-2 border-t border-slate-800/80">
+            <p class="text-xs text-slate-400">¿Ya tienes cuenta? <a href="/login" class="text-blue-400 hover:underline font-medium">Inicia sesión</a></p>
+        </div>
+    </section>
+</main>
+
+<script>
+    document.getElementById('registro-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        const errorDiv = document.getElementById('registro-error');
+        const successDiv = document.getElementById('registro-result');
+
+        errorDiv.classList.add('hidden');
+        successDiv.classList.add('hidden');
+
+        try {
+            const response = await fetch('/api/login/registro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                successDiv.textContent = result.message || 'Usuario registrado con éxito.';
+                successDiv.classList.remove('hidden');
+                setTimeout(() => { window.location.href = '/login'; }, 2000);
+            } else {
+                errorDiv.textContent = result.detail || 'Error en el registro.';
+                errorDiv.classList.remove('hidden');
+            }
+        } catch (err) {
+            errorDiv.textContent = 'Error de conexión con el servidor.';
+            errorDiv.classList.remove('hidden');
+        }
+    });
+</script>
+{% endblock %}

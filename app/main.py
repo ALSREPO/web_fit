@@ -233,6 +233,13 @@ async def sesion_detail_view(request: Request, fecha: date):
 async def admin_panel(request: Request, username: str = Depends(verify_admin)):
     return templates.TemplateResponse(request, "admin.html", {"request": request, "entorno": ENTORNO.upper()})
 
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse(request, "login/login.html", {"request": request, "entorno": ENTORNO.upper()})
+
+@app.get("/registro", response_class=HTMLResponse)
+async def registro_page(request: Request):
+    return templates.TemplateResponse(request, "login/registro.html", {"request": request, "entorno": ENTORNO.upper()})
 
 # Si entra en una ruta no definida, redirige a la raíz
 @app.exception_handler(status.HTTP_404_NOT_FOUND)

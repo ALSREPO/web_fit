@@ -75,7 +75,7 @@ async def obtener_usuario_actual(request: Request, db: Session = Depends(get_rea
 
 
 async def verificar_admin(user: Usuario = Depends(obtener_usuario_actual)):
-    if not user or user.activo < 2:
+    if not user or user.activo < 20:
         logger.warning(f"Intento de acceso no autorizado a ruta admin por parte de ID_USUARIO[{user.idusuario if user else 'usuario desconocido'}]")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -85,7 +85,7 @@ async def verificar_admin(user: Usuario = Depends(obtener_usuario_actual)):
 
 
 async def usuario_obligatorio(user: Usuario = Depends(obtener_usuario_actual)):
-    if not user or user.activo < 1:
+    if not user or user.activo < 10:
         logger.warning(f"Intento de acceso no autorizado por parte de ID_USUARIO[{user.idusuario if user else 'usuario desconocido'}]")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
