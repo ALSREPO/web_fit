@@ -5,10 +5,12 @@
             <!-- Bloque Izquierdo: Logo y Título en una sola línea -->
             <div class="flex items-center">
                 <a href="/" class="flex items-center gap-2 group transition-opacity hover:opacity-90 whitespace-nowrap">
-                    <svg class="h-6 w-6 text-blue-500 transition-transform group-hover:scale-110 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <!-- Icono ligeramente más grande para acompañar la tipografía -->
+                    <svg class="h-8 w-8 text-blue-500 transition-transform group-hover:scale-110 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10v4m2-5v6m2-7v8m10-8v8m2-7v6m2-5v4M7 12h10" />
                     </svg>
-                    <h1 class="font-bold text-sm sm:text-base text-slate-100 group-hover:text-blue-400 transition-colors">
+                    <!-- Título más grande y con peso extra -->
+                    <h1 class="font-bold text-xl sm:text-xl text-slate-100 group-hover:text-blue-400 transition-colors tracking-tight">
                         Diario de Hierro
                     </h1>
                 </a>
@@ -37,9 +39,14 @@
                         Registro
                     </a>
                 {% else %}
-                    <a href="/perfil" class="text-xs text-slate-300 hover:text-white font-medium truncate max-w-[100px]">
-                        👤 {{ user.nombre }}
-                    </a>
+                    <div class="flex flex-col items-end text-right">
+                        <a href="/perfil" class="text-xs font-bold text-slate-200 hover:text-blue-400 truncate max-w-[120px]" title="{{ user.nombre }}">
+                            {{ user.nombre }}
+                        </a>
+                        <a href="/logout" class="text-[10px] font-semibold text-rose-400 hover:text-rose-300 uppercase tracking-wider transition-colors">
+                            Cerrar sesión
+                        </a>
+                    </div>
                 {% endif %}
             </div>
 
